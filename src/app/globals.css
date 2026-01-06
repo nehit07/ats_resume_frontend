@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+/* ===== CSS Variables for Theming ===== */
+:root {
+  /* Light mode (default) */
+  --background: #fafafa;
+  --background-secondary: #ffffff;
+  --foreground: #18181b;
+  --foreground-secondary: #71717a;
+  --border: #e5e7eb;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+
+  /* Primary colors */
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+
+  /* Gradient blob colors - Light mode (visible but soft) */
+  --gradient-1: rgba(147, 112, 219, 0.40);
+  --gradient-2: rgba(99, 102, 241, 0.33);
+  --gradient-3: rgba(45, 212, 191, 0.25);
+  --gradient-4: rgba(236, 72, 153, 0.30);
+  --gradient-5: rgba(34, 211, 238, 0.28);
+}
+
+.dark {
+  /* Dark mode */
+  --background: #0a0a0f;
+  --background-secondary: #18181b;
+  --foreground: #fafafa;
+  --foreground-secondary: #a1a1aa;
+  --border: #27272a;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+
+  /* Gradient blob colors - Dark mode (more visible but still soft) */
+  --gradient-1: rgba(139, 92, 246, 0.35);
+  --gradient-2: rgba(59, 130, 246, 0.28);
+  --gradient-3: rgba(20, 184, 166, 0.22);
+  --gradient-4: rgba(236, 72, 153, 0.25);
+  --gradient-5: rgba(34, 211, 238, 0.22);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ===== Base Styles ===== */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===== Animated Gradient Background ===== */
+.gradient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.gradient-blob-1 {
+  width: 600px;
+  height: 600px;
+  background: var(--gradient-1);
+  top: -200px;
+  left: -100px;
+  animation: float-1 20s ease-in-out infinite;
+}
+
+.gradient-blob-2 {
+  width: 500px;
+  height: 500px;
+  background: var(--gradient-2);
+  top: 50%;
+  right: -150px;
+  animation: float-2 25s ease-in-out infinite;
+}
+
+.gradient-blob-3 {
+  width: 400px;
+  height: 400px;
+  background: var(--gradient-3);
+  bottom: -100px;
+  left: 30%;
+}
+
+.gradient-blob-4 {
+  width: 450px;
+  height: 450px;
+  background: var(--gradient-4);
+  top: 40%;
+  left: -200px;
+}
+
+.gradient-blob-5 {
+  width: 350px;
+  height: 350px;
+  background: var(--gradient-5);
+  top: -150px;
+  right: 20%;
+}
+
+@keyframes float-1 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(50px, 50px) scale(1.05);
+  }
+
+  66% {
+    transform: translate(-30px, 20px) scale(0.95);
+  }
+}
+
+@keyframes float-2 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(-40px, -30px) scale(1.08);
+  }
+
+  66% {
+    transform: translate(30px, -50px) scale(0.92);
+  }
+}
+
+@keyframes float-3 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(60px, -40px) scale(0.95);
+  }
+
+  66% {
+    transform: translate(-50px, 30px) scale(1.05);
+  }
+}
+
+/* ===== Glass Card Effect ===== */
+.glass-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Button Styles ===== */
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: var(--background-secondary);
+  color: var(--foreground);
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+/* ===== Input Styles ===== */
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--foreground);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-field::placeholder {
+  color: var(--foreground-secondary);
+}
+
+/* ===== Theme Toggle Button ===== */
+.theme-toggle {
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  background: var(--background-secondary);
+}
