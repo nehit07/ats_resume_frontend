@@ -15,12 +15,14 @@
   --primary: #6366f1;
   --primary-foreground: #ffffff;
 
-  /* Gradient blob colors - Light mode (visible but soft) */
-  --gradient-1: rgba(147, 112, 219, 0.40);
-  --gradient-2: rgba(99, 102, 241, 0.33);
-  --gradient-3: rgba(45, 212, 191, 0.25);
-  --gradient-4: rgba(236, 72, 153, 0.30);
-  --gradient-5: rgba(34, 211, 238, 0.28);
+  /* Gradient blob colors - Light mode (more visible, soft pastel tones) */
+  --gradient-1: rgba(180, 160, 220, 0.32);
+  --gradient-2: rgba(140, 160, 230, 0.28);
+  --gradient-3: rgba(120, 200, 190, 0.25);
+  --gradient-4: rgba(220, 140, 180, 0.28);
+  --gradient-5: rgba(130, 200, 220, 0.26);
+  --gradient-6: rgba(160, 180, 240, 0.30);
+  --gradient-7: rgba(180, 150, 200, 0.28);
 }
 
 .dark {
@@ -33,12 +35,14 @@
   --card: #18181b;
   --card-foreground: #fafafa;
 
-  /* Gradient blob colors - Dark mode (more visible but still soft) */
-  --gradient-1: rgba(139, 92, 246, 0.35);
-  --gradient-2: rgba(59, 130, 246, 0.28);
-  --gradient-3: rgba(20, 184, 166, 0.22);
-  --gradient-4: rgba(236, 72, 153, 0.25);
-  --gradient-5: rgba(34, 211, 238, 0.22);
+  /* Gradient blob colors - Dark mode (subtle and smooth) */
+  --gradient-1: rgba(139, 92, 246, 0.22);
+  --gradient-2: rgba(59, 130, 246, 0.18);
+  --gradient-3: rgba(20, 184, 166, 0.15);
+  --gradient-4: rgba(236, 72, 153, 0.18);
+  --gradient-5: rgba(34, 211, 238, 0.16);
+  --gradient-6: rgba(99, 102, 241, 0.20);
+  --gradient-7: rgba(168, 85, 247, 0.18);
 }
 
 @theme inline {
@@ -67,7 +71,7 @@ body {
 .gradient-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(100px);
   pointer-events: none;
   will-change: transform;
 }
@@ -112,6 +116,24 @@ body {
   background: var(--gradient-5);
   top: -150px;
   right: 20%;
+}
+
+.gradient-blob-6 {
+  width: 500px;
+  height: 500px;
+  background: var(--gradient-6);
+  top: 35%;
+  left: 25%;
+  animation: float-3 22s ease-in-out infinite;
+}
+
+.gradient-blob-7 {
+  width: 400px;
+  height: 400px;
+  background: var(--gradient-7);
+  top: 45%;
+  left: 45%;
+  animation: float-1 18s ease-in-out infinite reverse;
 }
 
 @keyframes float-1 {

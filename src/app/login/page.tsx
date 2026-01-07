@@ -3,6 +3,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -54,11 +55,14 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="flex justify-between items-center p-6">
-                <h1 className="text-xl font-semibold text-foreground">
-                    AI Resume Generator
-                </h1>
-                <ThemeToggle />
+            <header className="border-b border-border">
+                <div className="mx-auto px-6 py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
+                    <Link href="/" className="flex items-center gap-3">
+                        <Image src="/logo.png" alt="Resumify" width={40} height={40} className="rounded-lg" />
+                        <span className="text-2xl font-semibold text-foreground">Resumify</span>
+                    </Link>
+                    <ThemeToggle />
+                </div>
             </header>
 
             {/* Main Content */}

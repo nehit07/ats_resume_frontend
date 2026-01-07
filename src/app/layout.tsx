@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI ATS Resume Generator",
-  description: "Create ATS-optimized resumes powered by AI",
+  title: "Resumify - AI-Powered ATS Resume Generator",
+  description: "Create professional, ATS-optimized resumes instantly with AI. Stand out to recruiters and land your dream job with Resumify.",
 };
 
 export default function RootLayout({

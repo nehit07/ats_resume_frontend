@@ -15,6 +15,7 @@ interface User {
     id: string;
     email: string;
     auth_provider: string;
+    avatar_url?: string | null;
 }
 
 interface AuthContextType {
