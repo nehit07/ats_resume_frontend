@@ -103,7 +103,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Profile Creation Card */}
-                        <div className="glass-card p-6 opacity-60">
+                        <div className="glass-card p-6">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="p-3 bg-primary/10 rounded-lg">
                                     <svg
@@ -124,9 +124,6 @@ export default function DashboardPage() {
                                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                     </svg>
                                 </div>
-                                <span className="text-xs bg-foreground-secondary/20 text-foreground-secondary px-2 py-1 rounded-full">
-                                    Coming Soon
-                                </span>
                             </div>
                             <h4 className="font-medium text-foreground mb-2">
                                 Create Your Profile
@@ -134,9 +131,9 @@ export default function DashboardPage() {
                             <p className="text-sm text-foreground-secondary mb-4">
                                 Build your professional profile for personalized resumes
                             </p>
-                            <button disabled className="btn-primary w-full opacity-50 cursor-not-allowed">
+                            <Link href="/profile/create" className="btn-primary w-full block text-center">
                                 Create Profile
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
