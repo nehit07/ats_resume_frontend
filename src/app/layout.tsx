@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/logo.png",
+  },
   title: "Resumify - AI-Powered ATS Resume Generator",
   description: "Create professional, ATS-optimized resumes instantly with AI. Stand out to recruiters and land your dream job with Resumify.",
 };

@@ -34,7 +34,7 @@ export default function LoginPage() {
             await login(email, password);
             router.push("/dashboard");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
+            setError("Invalid Credentials");
         } finally {
             setIsLoading(false);
         }
@@ -119,9 +119,12 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="input-field"
-                                    placeholder="••••••••"
+                                    placeholder="Password"
                                     required
                                 />
+                                <p className="mt-1 text-xs text-foreground-secondary">
+                                    Must be at least 8 characters
+                                </p>
                             </div>
 
                             <button
