@@ -31,7 +31,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Store token in memory (not localStorage for security)
+// Storage keys
+const AUTH_TOKEN_KEY = "resumify_auth_token";
+const AUTH_USER_KEY = "resumify_auth_user";
+
+// Store token in memory (also persisted to localStorage for refresh survival)
 let inMemoryToken: string | null = null;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -39,25 +43,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [accessToken, setAccessToken] = useState<string | null>(null);
 
-    // Check for existing auth on mount (from OAuth callback stored in sessionStorage temporarily)
+    // Check for existing auth on mount
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // Check if we have a token from OAuth callback
-                const storedToken = sessionStorage.getItem("temp_token");
-                const storedUser = sessionStorage.getItem("temp_user");
+                // First check localStorage for persisted auth (survives page refresh)
+                const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+                const storedUser = localStorage.getItem(AUTH_USER_KEY);
 
                 if (storedToken && storedUser) {
                     inMemoryToken = storedToken;
                     setAccessToken(storedToken);
                     setUser(JSON.parse(storedUser));
+                } else {
+                    // Fallback: Check sessionStorage for OAuth callback tokens
+                    const tempToken = sessionStorage.getItem("temp_token");
+                    const tempUser = sessionStorage.getItem("temp_user");
 
-                    // Clear temporary storage
-                    sessionStorage.removeItem("temp_token");
-                    sessionStorage.removeItem("temp_user");
+                    if (tempToken && tempUser) {
+                        inMemoryToken = tempToken;
+                        setAccessToken(tempToken);
+                        const parsedUser = JSON.parse(tempUser);
+                        setUser(parsedUser);
+
+                        // Persist to localStorage and clear temp storage
+                        localStorage.setItem(AUTH_TOKEN_KEY, tempToken);
+                        localStorage.setItem(AUTH_USER_KEY, tempUser);
+                        sessionStorage.removeItem("temp_token");
+                        sessionStorage.removeItem("temp_user");
+                    }
                 }
             } catch (error) {
                 console.error("Auth check failed:", error);
+                // Clear any corrupted data
+                localStorage.removeItem(AUTH_TOKEN_KEY);
+                localStorage.removeItem(AUTH_USER_KEY);
             } finally {
                 setIsLoading(false);
             }
@@ -84,10 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const data = await response.json();
 
-            // Store token in memory
+            // Store token in memory and localStorage
             inMemoryToken = data.access_token;
             setAccessToken(data.access_token);
             setUser(data.user);
+            localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
+            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
         } finally {
             setIsLoading(false);
         }
@@ -115,6 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             inMemoryToken = data.access_token;
             setAccessToken(data.access_token);
             setUser(data.user);
+            localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
+            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
         } finally {
             setIsLoading(false);
         }
@@ -134,10 +158,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
-            // Clear auth state regardless of API response
+            // Clear auth state and localStorage
             inMemoryToken = null;
             setAccessToken(null);
             setUser(null);
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(AUTH_USER_KEY);
         }
     }, []);
 
@@ -145,6 +171,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         inMemoryToken = token;
         setAccessToken(token);
         setUser(userData);
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
     }, []);
 
     return (

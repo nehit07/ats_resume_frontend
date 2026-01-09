@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProfileButton } from "@/components/ProfileButton";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 type SectionType = "contact" | "summary" | "skills" | "projects" | "experience" | "education" | "achievements";
 
@@ -54,6 +54,16 @@ interface AchievementEntry {
 interface UploadStatus {
     resume: "idle" | "uploading" | "success" | "error";
     linkedin: "idle" | "uploading" | "success" | "error";
+}
+
+interface RawFile {
+    id: string;
+    file_name: string;
+    file_url: string;
+    file_type?: string;
+    is_selected: boolean;
+    order: number;
+    uploaded_at: string;
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -104,8 +114,8 @@ export default function ProfileCreatePage() {
         resume: "idle",
         linkedin: "idle",
     });
-    const [isProcessing, setIsProcessing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     // Simple section states
     const [contact, setContact] = useState({
@@ -124,12 +134,102 @@ export default function ProfileCreatePage() {
     const [projects, setProjects] = useState<ProjectEntry[]>([createEmptyProject()]);
     const [achievements, setAchievements] = useState<AchievementEntry[]>([createEmptyAchievement()]);
 
+    // File lists
+    const [resumes, setResumes] = useState<RawFile[]>([]);
+    const [linkedinFiles, setLinkedinFiles] = useState<RawFile[]>([]);
+
+    // New states for UI improvements
+    const [hasAnyData, setHasAnyData] = useState(false);
+    const [isUploading, setIsUploading] = useState<"resume" | "linkedin" | null>(null);
+
+    // Check if user has any data (for enabling Review button)
+    useEffect(() => {
+        const hasData = Boolean(
+            resumes.length > 0 ||
+            linkedinFiles.length > 0 ||
+            Object.values(contact).some((v) => Boolean(v)) ||
+            summary.text ||
+            skills.skills ||
+            education.some((e) => e.institution_name) ||
+            experience.some((e) => e.company_name) ||
+            projects.some((p) => p.name) ||
+            achievements.some((a) => a.title)
+        );
+        setHasAnyData(hasData);
+    }, [resumes, linkedinFiles, contact, summary, skills, education, experience, projects, achievements]);
+
     // Redirect if not authenticated
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             router.replace("/login");
         }
     }, [isAuthenticated, isLoading, router]);
+
+    // Fetch saved data on mount
+    useEffect(() => {
+        if (!isAuthenticated || !accessToken) return;
+
+        const fetchData = async () => {
+            try {
+                // Fetch manual and overview data
+                const reviewRes = await fetch(`${API_BASE_URL}/api/ingestion/review-data/`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+
+                if (reviewRes.ok) {
+                    const data = await reviewRes.json();
+                    if (data.manual) {
+                        if (data.manual.contact) setContact(data.manual.contact);
+                        if (data.manual.summary) setSummary(data.manual.summary);
+                        if (data.manual.skills) setSkills(data.manual.skills);
+                        if (data.manual.education?.length > 0) setEducation(data.manual.education);
+                        if (data.manual.experience?.length > 0) setExperience(data.manual.experience);
+                        if (data.manual.projects?.length > 0) setProjects(data.manual.projects);
+                        if (data.manual.achievements?.length > 0) setAchievements(data.manual.achievements);
+                    }
+                }
+
+                // Fetch full file lists
+                const filesRes = await fetch(`${API_BASE_URL}/api/ingestion/files/`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+
+                if (filesRes.ok) {
+                    const filesData = await filesRes.json();
+                    setResumes(filesData.resumes || []);
+                    setLinkedinFiles(filesData.linkedin || []);
+                    setUploadStatus({
+                        resume: filesData.resumes?.length > 0 ? "success" : "idle",
+                        linkedin: filesData.linkedin?.length > 0 ? "success" : "idle",
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch saved data:", error);
+            } finally {
+                setIsInitialLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [isAuthenticated, accessToken]);
+
+    const fetchFiles = async () => {
+        if (!accessToken) return null;
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/ingestion/files/`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setResumes(data.resumes || []);
+                setLinkedinFiles(data.linkedin || []);
+                return data;
+            }
+        } catch (error) {
+            console.error("Failed to fetch files:", error);
+        }
+        return null;
+    };
 
     const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -138,6 +238,7 @@ export default function ProfileCreatePage() {
         const formData = new FormData();
         formData.append("file", file);
 
+        setIsUploading("resume"); // Lock other sections
         setUploadStatus((prev) => ({ ...prev, resume: "uploading" }));
 
         try {
@@ -151,11 +252,14 @@ export default function ProfileCreatePage() {
 
             if (response.ok) {
                 setUploadStatus((prev) => ({ ...prev, resume: "success" }));
+                await fetchFiles();
             } else {
                 setUploadStatus((prev) => ({ ...prev, resume: "error" }));
             }
         } catch {
             setUploadStatus((prev) => ({ ...prev, resume: "error" }));
+        } finally {
+            setIsUploading(null); // Unlock sections
         }
     };
 
@@ -166,6 +270,7 @@ export default function ProfileCreatePage() {
         const formData = new FormData();
         formData.append("file", file);
 
+        setIsUploading("linkedin"); // Lock other sections
         setUploadStatus((prev) => ({ ...prev, linkedin: "uploading" }));
 
         try {
@@ -179,11 +284,63 @@ export default function ProfileCreatePage() {
 
             if (response.ok) {
                 setUploadStatus((prev) => ({ ...prev, linkedin: "success" }));
+                await fetchFiles();
             } else {
                 setUploadStatus((prev) => ({ ...prev, linkedin: "error" }));
             }
         } catch {
             setUploadStatus((prev) => ({ ...prev, linkedin: "error" }));
+        } finally {
+            setIsUploading(null); // Unlock sections
+        }
+    };
+
+    const handleRemoveFile = async (type: "resume" | "linkedin", id: string) => {
+        if (!confirm("Are you sure you want to remove this file?")) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/ingestion/files/${type}/${id}/`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+
+            if (response.ok) {
+                const newData = await fetchFiles();
+                if (newData) {
+                    if (type === "resume" && newData.resumes.length === 0) {
+                        setUploadStatus(prev => ({ ...prev, resume: "idle" }));
+                    } else if (type === "linkedin" && newData.linkedin.length === 0) {
+                        setUploadStatus(prev => ({ ...prev, linkedin: "idle" }));
+                    }
+                }
+            } else {
+                alert("Failed to delete file.");
+            }
+        } catch (error) {
+            console.error("Delete failed:", error);
+            alert("Error deleting file.");
+        }
+    };
+
+    const handleToggleSelect = async (type: "resume" | "linkedin", id: string, currentlySelected: boolean) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/ingestion/files/${type}/${id}/toggle-selection/`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ is_selected: !currentlySelected }),
+            });
+
+            if (response.ok) {
+                await fetchFiles();
+            } else {
+                alert("Failed to update selection.");
+            }
+        } catch (error) {
+            console.error("Toggle failed:", error);
+            alert("Error updating selection.");
         }
     };
 
@@ -237,15 +394,6 @@ export default function ProfileCreatePage() {
         }
     };
 
-    const handleProcessData = async () => {
-        setIsProcessing(true);
-        // TODO: Call /api/ingestion/process/ when backend is ready
-        setTimeout(() => {
-            setIsProcessing(false);
-            router.push("/profile/review");
-        }, 2000);
-    };
-
     // Education handlers
     const addEducation = () => setEducation([...education, createEmptyEducation()]);
     const removeEducation = (id: string) => {
@@ -290,10 +438,10 @@ export default function ProfileCreatePage() {
         setAchievements(achievements.map((a) => (a.id === id ? { ...a, [field]: value } : a)));
     };
 
-    if (isLoading) {
+    if (isLoading || isInitialLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse text-foreground-secondary">Loading...</div>
+                <div className="animate-pulse text-foreground-secondary">Loading profile data...</div>
             </div>
         );
     }
@@ -328,6 +476,33 @@ export default function ProfileCreatePage() {
                 </div>
             </header>
 
+            {/* Sticky Action Bar */}
+            <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
+                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <p className="text-sm text-foreground-secondary">
+                            ℹ️ Please add your details from at least one source
+                        </p>
+                        {hasAnyData && (
+                            <p className="text-xs text-green-500 mt-1">
+                                ✓ You have added data. Ready to review!
+                            </p>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => router.push("/profile/review")}
+                        disabled={!hasAnyData}
+                        className={`btn-primary px-6 py-2 flex items-center gap-2 ${!hasAnyData ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                    >
+                        📋 Review My Data
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             {/* Main Content */}
             <main className="flex-1 p-6 md:p-8">
                 <div className="max-w-5xl mx-auto">
@@ -344,7 +519,8 @@ export default function ProfileCreatePage() {
                     {/* Upload Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         {/* Resume Upload Card */}
-                        <div className="glass-card p-6">
+                        <div className={`glass-card p-6 transition-opacity ${isUploading && isUploading !== "resume" ? "opacity-50 pointer-events-none" : ""
+                            }`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-3 bg-primary/10 rounded-lg">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
@@ -353,34 +529,85 @@ export default function ProfileCreatePage() {
                                     </svg>
                                 </div>
                                 <h3 className="font-medium text-foreground">Upload Resume</h3>
-                                {uploadStatus.resume === "success" && (
-                                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full ml-auto">✓ Uploaded</span>
+                                {resumes.length > 0 && (
+                                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full ml-auto">
+                                        {resumes.length}/5 Uploaded
+                                    </span>
                                 )}
                             </div>
+
+                            {/* Uploaded Resumes List */}
+                            {resumes.length > 0 && (
+                                <div className="mb-4 space-y-2">
+                                    {resumes.map((file) => (
+                                        <div key={file.id}
+                                            onClick={() => handleToggleSelect("resume", file.id, file.is_selected)}
+                                            className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer group ${file.is_selected
+                                                    ? "bg-primary/5 border-primary/30"
+                                                    : "bg-background-secondary border-border opacity-60 grayscale"
+                                                }`}>
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${file.is_selected ? "bg-primary border-primary" : "border-border"
+                                                    }`}>
+                                                    {file.is_selected && (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs">📄</span>
+                                                <span className="text-xs font-medium text-foreground truncate max-w-[150px]" title={file.file_name}>
+                                                    {file.file_name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRemoveFile("resume", file.id);
+                                                }}
+                                                className="text-red-500 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Remove file"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <p className="text-sm text-foreground-secondary mb-4">
                                 Upload your existing resume (PDF or DOCX)
                             </p>
-                            <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.resume === "uploading" ? "opacity-50" : ""}`}>
-                                <input
-                                    type="file"
-                                    accept=".pdf,.docx"
-                                    className="hidden"
-                                    onChange={handleResumeUpload}
-                                    disabled={uploadStatus.resume === "uploading"}
-                                />
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <span className="text-sm text-foreground-secondary">
-                                    {uploadStatus.resume === "uploading" ? "Uploading..." : "Drop file here or click to browse"}
-                                </span>
-                            </label>
+                            {resumes.length < 5 ? (
+                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.resume === "uploading" ? "opacity-50" : ""}`}>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.docx"
+                                        className="hidden"
+                                        onChange={handleResumeUpload}
+                                        disabled={uploadStatus.resume === "uploading"}
+                                    />
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <span className="text-sm text-foreground-secondary">
+                                        {uploadStatus.resume === "uploading" ? "Uploading..." : "Drop file here or click to browse"}
+                                    </span>
+                                </label>
+                            ) : (
+                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
+                                    <p className="text-xs text-yellow-500">Maximum limit of 5 files reached.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* LinkedIn Upload Card */}
-                        <div className="glass-card p-6">
+                        <div className={`glass-card p-6 transition-opacity ${isUploading && isUploading !== "linkedin" ? "opacity-50 pointer-events-none" : ""
+                            }`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-3 bg-primary/10 rounded-lg">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
@@ -388,38 +615,89 @@ export default function ProfileCreatePage() {
                                     </svg>
                                 </div>
                                 <h3 className="font-medium text-foreground">Upload LinkedIn Profile</h3>
-                                {uploadStatus.linkedin === "success" && (
-                                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full ml-auto">✓ Uploaded</span>
+                                {linkedinFiles.length > 0 && (
+                                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full ml-auto">
+                                        {linkedinFiles.length}/5 Uploaded
+                                    </span>
                                 )}
                             </div>
+
+                            {/* Uploaded LinkedIn Files List */}
+                            {linkedinFiles.length > 0 && (
+                                <div className="mb-4 space-y-2">
+                                    {linkedinFiles.map((file) => (
+                                        <div key={file.id}
+                                            onClick={() => handleToggleSelect("linkedin", file.id, file.is_selected)}
+                                            className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer group ${file.is_selected
+                                                    ? "bg-primary/5 border-primary/30"
+                                                    : "bg-background-secondary border-border opacity-60 grayscale"
+                                                }`}>
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${file.is_selected ? "bg-primary border-primary" : "border-border"
+                                                    }`}>
+                                                    {file.is_selected && (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs">💼</span>
+                                                <span className="text-xs font-medium text-foreground truncate max-w-[150px]" title={file.file_name}>
+                                                    {file.file_name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRemoveFile("linkedin", file.id);
+                                                }}
+                                                className="text-red-500 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Remove file"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <p className="text-sm text-foreground-secondary mb-2">
                                 Download your LinkedIn profile as PDF and upload here
                             </p>
                             <p className="text-xs text-foreground-secondary/70 mb-4">
                                 Go to your LinkedIn profile → Click &quot;More&quot; → &quot;Save to PDF&quot;
                             </p>
-                            <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.linkedin === "uploading" ? "opacity-50" : ""}`}>
-                                <input
-                                    type="file"
-                                    accept=".pdf"
-                                    className="hidden"
-                                    onChange={handleLinkedInUpload}
-                                    disabled={uploadStatus.linkedin === "uploading"}
-                                />
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <span className="text-sm text-foreground-secondary">
-                                    {uploadStatus.linkedin === "uploading" ? "Uploading..." : "Drop LinkedIn PDF here"}
-                                </span>
-                            </label>
+                            {linkedinFiles.length < 5 ? (
+                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.linkedin === "uploading" ? "opacity-50" : ""}`}>
+                                    <input
+                                        type="file"
+                                        accept=".pdf"
+                                        className="hidden"
+                                        onChange={handleLinkedInUpload}
+                                        disabled={uploadStatus.linkedin === "uploading"}
+                                    />
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <span className="text-sm text-foreground-secondary">
+                                        {uploadStatus.linkedin === "uploading" ? "Uploading..." : "Drop LinkedIn PDF here"}
+                                    </span>
+                                </label>
+                            ) : (
+                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
+                                    <p className="text-xs text-yellow-500">Maximum limit of 5 files reached.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Manual Entry Section */}
-                    <div className="glass-card p-6 mb-8">
+                    <div className={`glass-card p-6 mb-8 transition-opacity ${isUploading ? "opacity-50 pointer-events-none" : ""
+                        }`}>
                         <h3 className="font-medium text-foreground mb-4">Enter Data Manually</h3>
 
                         <div className="flex flex-col md:flex-row gap-6">
@@ -870,25 +1148,6 @@ export default function ProfileCreatePage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Process Data Button */}
-                    <button
-                        onClick={handleProcessData}
-                        disabled={isProcessing}
-                        className="btn-primary w-full py-4 text-lg"
-                    >
-                        {isProcessing ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Processing...
-                            </span>
-                        ) : (
-                            "🚀 Process My Data"
-                        )}
-                    </button>
                 </div>
             </main>
         </div>
