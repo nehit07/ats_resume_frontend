@@ -34,13 +34,13 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="border-b border-border">
-                <div className="mx-auto px-6 py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
-                    <Link href="/" className="flex items-center gap-3">
-                        <Image src="/logo.png" alt="Resumify" width={40} height={40} className="rounded-lg" />
-                        <span className="text-2xl font-semibold text-foreground">Resumify</span>
+            <header className="border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30">
+                <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
+                    <Link href="/" className="flex items-center gap-2 md:gap-3">
+                        <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
+                        <span className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Resumify</span>
                     </Link>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4">
                         <ThemeToggle />
                         <ProfileButton />
                     </div>
@@ -48,8 +48,8 @@ export default function DashboardPage() {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 md:p-8">
-                <div className="max-w-5xl mx-auto">
+            <main className="flex-1 p-4 md:p-8">
+                <div className="max-w-[1400px] mx-auto">
                     {/* Welcome Section */}
                     <div className="mb-8">
                         <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">

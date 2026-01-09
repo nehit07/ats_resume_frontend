@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -23,6 +23,12 @@ export const metadata: Metadata = {
   },
   title: "Resumify - AI-Powered ATS Resume Generator",
   description: "Create professional, ATS-optimized resumes instantly with AI. Stand out to recruiters and land your dream job with Resumify.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

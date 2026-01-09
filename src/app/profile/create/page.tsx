@@ -141,6 +141,8 @@ export default function ProfileCreatePage() {
     // New states for UI improvements
     const [hasAnyData, setHasAnyData] = useState(false);
     const [isUploading, setIsUploading] = useState<"resume" | "linkedin" | null>(null);
+    const isResumeSelected = resumes.some((r) => r.is_selected);
+    const isLinkedInSelected = linkedinFiles.some((l) => l.is_selected);
 
     // Check if user has any data (for enabling Review button)
     useEffect(() => {
@@ -161,6 +163,7 @@ export default function ProfileCreatePage() {
     // Redirect if not authenticated
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
+            setIsInitialLoading(false);
             router.replace("/login");
         }
     }, [isAuthenticated, isLoading, router]);
@@ -463,13 +466,13 @@ export default function ProfileCreatePage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="border-b border-border">
-                <div className="mx-auto px-6 py-4 flex justify-between items-center" style={{ maxWidth: "1400px" }}>
-                    <Link href="/dashboard" className="flex items-center gap-3">
-                        <Image src="/logo.png" alt="Resumify" width={40} height={40} className="rounded-lg" />
-                        <span className="text-2xl font-semibold text-foreground">Resumify</span>
+            <header className="sticky border-b border-primary/0 bg-background/50 backdrop-blur-md top-0 h-16 z-30">
+                <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
+                    <Link href="/dashboard" className="flex items-center gap-2 md:gap-3">
+                        <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
+                        <span className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Resumify</span>
                     </Link>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4">
                         <ThemeToggle />
                         <ProfileButton />
                     </div>
@@ -477,26 +480,41 @@ export default function ProfileCreatePage() {
             </header>
 
             {/* Sticky Action Bar */}
-            <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
-                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-foreground-secondary">
-                            ℹ️ Please add your details from at least one source
-                        </p>
-                        {hasAnyData && (
-                            <p className="text-xs text-green-500 mt-1">
-                                ✓ You have added data. Ready to review!
-                            </p>
+            <div className="sticky top-16 z-20 bg-background/50 backdrop-blur-xl border-b border-primary/0 transition-all duration-300">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1">
+                        {!hasAnyData ? (
+                            <div className="flex items-center gap-3 py-1">
+                                <div className="p-1.5 bg-primary/10 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                                    </svg>
+                                </div>
+                                <p className="text-sm font-medium text-foreground-secondary leading-tight">
+                                    Start building your profile by uploading a resume or entering details manually.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3 py-1 animate-in fade-in slide-in-from-left-4 duration-500">
+                                <div className="p-1.5 bg-green-500/10 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </div>
+                                <p className="text-sm font-medium text-green-600 dark:text-green-400 leading-tight">
+                                    Your data is ready! Click review to finalize your profile.
+                                </p>
+                            </div>
                         )}
                     </div>
                     <button
                         onClick={() => router.push("/profile/review")}
                         disabled={!hasAnyData}
-                        className={`btn-primary px-6 py-2 flex items-center gap-2 ${!hasAnyData ? "opacity-50 cursor-not-allowed" : ""
+                        className={`btn-primary px-8 py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all ${!hasAnyData ? "opacity-40 grayscale cursor-not-allowed" : "hover:scale-105 active:scale-95"
                             }`}
                     >
-                        📋 Review My Data
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <span>📋 Review My Data</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -504,8 +522,8 @@ export default function ProfileCreatePage() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 md:p-8">
-                <div className="max-w-5xl mx-auto">
+            <main className="flex-1 p-4 md:p-8">
+                <div className="max-w-[1400px] mx-auto">
                     {/* Welcome Section */}
                     <div className="mb-8">
                         <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">
@@ -543,8 +561,8 @@ export default function ProfileCreatePage() {
                                         <div key={file.id}
                                             onClick={() => handleToggleSelect("resume", file.id, file.is_selected)}
                                             className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer group ${file.is_selected
-                                                    ? "bg-primary/5 border-primary/30"
-                                                    : "bg-background-secondary border-border opacity-60 grayscale"
+                                                ? "bg-primary/5 border-primary/30"
+                                                : "bg-background-secondary border-border opacity-60 grayscale"
                                                 }`}>
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${file.is_selected ? "bg-primary border-primary" : "border-border"
@@ -581,22 +599,32 @@ export default function ProfileCreatePage() {
                                 Upload your existing resume (PDF or DOCX)
                             </p>
                             {resumes.length < 5 ? (
-                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.resume === "uploading" ? "opacity-50" : ""}`}>
+                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center transition-all relative overflow-hidden ${uploadStatus.resume === "uploading" || isResumeSelected ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-primary/50"
+                                    }`}>
                                     <input
                                         type="file"
                                         accept=".pdf,.docx"
                                         className="hidden"
                                         onChange={handleResumeUpload}
-                                        disabled={uploadStatus.resume === "uploading"}
+                                        disabled={uploadStatus.resume === "uploading" || isResumeSelected}
                                     />
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    <span className="text-sm text-foreground-secondary">
-                                        {uploadStatus.resume === "uploading" ? "Uploading..." : "Drop file here or click to browse"}
-                                    </span>
+                                    <div className={`transition-all ${isResumeSelected ? "blur-[2px]" : ""}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        <span className="text-sm text-foreground-secondary">
+                                            {uploadStatus.resume === "uploading" ? "Uploading..." : "Drop file here or click to browse"}
+                                        </span>
+                                    </div>
+                                    {isResumeSelected && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                                            <p className="text-xs font-medium text-primary bg-background/80 px-3 py-1.5 rounded-full shadow-sm border border-primary/20">
+                                                Deselect current file to upload more
+                                            </p>
+                                        </div>
+                                    )}
                                 </label>
                             ) : (
                                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
@@ -629,8 +657,8 @@ export default function ProfileCreatePage() {
                                         <div key={file.id}
                                             onClick={() => handleToggleSelect("linkedin", file.id, file.is_selected)}
                                             className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer group ${file.is_selected
-                                                    ? "bg-primary/5 border-primary/30"
-                                                    : "bg-background-secondary border-border opacity-60 grayscale"
+                                                ? "bg-primary/5 border-primary/30"
+                                                : "bg-background-secondary border-border opacity-60 grayscale"
                                                 }`}>
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${file.is_selected ? "bg-primary border-primary" : "border-border"
@@ -670,22 +698,32 @@ export default function ProfileCreatePage() {
                                 Go to your LinkedIn profile → Click &quot;More&quot; → &quot;Save to PDF&quot;
                             </p>
                             {linkedinFiles.length < 5 ? (
-                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors ${uploadStatus.linkedin === "uploading" ? "opacity-50" : ""}`}>
+                                <label className={`block border-2 border-dashed border-border rounded-lg p-8 text-center transition-all relative overflow-hidden ${uploadStatus.linkedin === "uploading" || isLinkedInSelected ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-primary/50"
+                                    }`}>
                                     <input
                                         type="file"
                                         accept=".pdf"
                                         className="hidden"
                                         onChange={handleLinkedInUpload}
-                                        disabled={uploadStatus.linkedin === "uploading"}
+                                        disabled={uploadStatus.linkedin === "uploading" || isLinkedInSelected}
                                     />
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    <span className="text-sm text-foreground-secondary">
-                                        {uploadStatus.linkedin === "uploading" ? "Uploading..." : "Drop LinkedIn PDF here"}
-                                    </span>
+                                    <div className={`transition-all ${isLinkedInSelected ? "blur-[2px]" : ""}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 text-foreground-secondary">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        <span className="text-sm text-foreground-secondary">
+                                            {uploadStatus.linkedin === "uploading" ? "Uploading..." : "Drop LinkedIn PDF here"}
+                                        </span>
+                                    </div>
+                                    {isLinkedInSelected && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                                            <p className="text-xs font-medium text-primary bg-background/80 px-3 py-1.5 rounded-full shadow-sm border border-primary/20">
+                                                Deselect current file to upload more
+                                            </p>
+                                        </div>
+                                    )}
                                 </label>
                             ) : (
                                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
@@ -817,8 +855,8 @@ export default function ProfileCreatePage() {
                                                         </button>
                                                     )}
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="md:col-span-2">
+                                                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                                    <div className="md:col-span-6">
                                                         <label className="block text-sm text-foreground-secondary mb-1">Degree / Qualification</label>
                                                         <input
                                                             type="text"
@@ -828,7 +866,7 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "degree_type", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="md:col-span-2">
+                                                    <div className="md:col-span-6">
                                                         <label className="block text-sm text-foreground-secondary mb-1">Institution Name</label>
                                                         <input
                                                             type="text"
@@ -838,7 +876,7 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "institution_name", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="md:col-span-2">
                                                         <label className="block text-sm text-foreground-secondary mb-1">City</label>
                                                         <input
                                                             type="text"
@@ -848,7 +886,7 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "city", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="md:col-span-2">
                                                         <label className="block text-sm text-foreground-secondary mb-1">State</label>
                                                         <input
                                                             type="text"
@@ -858,7 +896,7 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "state", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="md:col-span-2">
                                                         <label className="block text-sm text-foreground-secondary mb-1">Country</label>
                                                         <input
                                                             type="text"
@@ -868,7 +906,7 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "country", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="md:col-span-3">
                                                         <label className="block text-sm text-foreground-secondary mb-1">Start Date</label>
                                                         <input
                                                             type="month"
@@ -877,27 +915,29 @@ export default function ProfileCreatePage() {
                                                             onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
                                                         />
                                                     </div>
-                                                    <div>
-                                                        <label className="flex items-center gap-2 mb-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={edu.is_pursuing}
-                                                                onChange={(e) => updateEducation(edu.id, "is_pursuing", e.target.checked)}
-                                                                className="rounded"
-                                                            />
-                                                            <span className="text-sm text-foreground-secondary">Currently Pursuing</span>
-                                                        </label>
-                                                        {!edu.is_pursuing && (
-                                                            <>
-                                                                <label className="block text-sm text-foreground-secondary mb-1">End Date</label>
+                                                    <div className="md:col-span-3">
+                                                        <div className="flex flex-col h-full">
+                                                            <label className="block text-sm text-foreground-secondary mb-1">End Date</label>
+                                                            {!edu.is_pursuing && (
+                                                                <div className="mt-auto">
+                                                                    <input
+                                                                        type="month"
+                                                                        className="input-field"
+                                                                        value={edu.end_date}
+                                                                        onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <label className="flex items-center gap-2 mb-2">
                                                                 <input
-                                                                    type="month"
-                                                                    className="input-field"
-                                                                    value={edu.end_date}
-                                                                    onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
+                                                                    type="checkbox"
+                                                                    checked={edu.is_pursuing}
+                                                                    onChange={(e) => updateEducation(edu.id, "is_pursuing", e.target.checked)}
+                                                                    className="rounded"
                                                                 />
-                                                            </>
-                                                        )}
+                                                                <span className="text-sm text-foreground-secondary">Currently Pursuing</span>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -978,15 +1018,6 @@ export default function ProfileCreatePage() {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="flex items-center gap-2 mb-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={exp.is_current}
-                                                                onChange={(e) => updateExperience(exp.id, "is_current", e.target.checked)}
-                                                                className="rounded"
-                                                            />
-                                                            <span className="text-sm text-foreground-secondary">Currently Working Here</span>
-                                                        </label>
                                                         {!exp.is_current && (
                                                             <>
                                                                 <label className="block text-sm text-foreground-secondary mb-1">End Date</label>
@@ -998,6 +1029,15 @@ export default function ProfileCreatePage() {
                                                                 />
                                                             </>
                                                         )}
+                                                        <label className="flex items-center gap-2 mb-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={exp.is_current}
+                                                                onChange={(e) => updateExperience(exp.id, "is_current", e.target.checked)}
+                                                                className="rounded"
+                                                            />
+                                                            <span className="text-sm text-foreground-secondary">Currently Working Here</span>
+                                                        </label>
                                                     </div>
                                                     <div className="md:col-span-2">
                                                         <label className="block text-sm text-foreground-secondary mb-1">Job Description</label>

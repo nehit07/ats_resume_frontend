@@ -121,7 +121,7 @@ export default function ReviewPage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="border-b border-border">
+            <header className="sticky border-b border-border bg-background/50 backdrop-blur-md top-0 h-16 z-30">
                 <div className="mx-auto px-6 py-4 flex justify-between items-center" style={{ maxWidth: "1400px" }}>
                     <Link href="/dashboard" className="flex items-center gap-3">
                         <Image src="/logo.png" alt="Resumify" width={40} height={40} className="rounded-lg" />
@@ -135,22 +135,22 @@ export default function ReviewPage() {
             </header>
 
             {/* Sticky Action Bar */}
-            <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-16 z-20 bg-background/50 backdrop-blur-xl border-b border-primary/0 transition-all duration-300">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-foreground">📋 Review Your Data</h2>
-                        <p className="text-sm text-foreground-secondary">
-                            Check your data before creating your profile
+                        <h2 className="text-lg font-semibold text-foreground tracking-tight">📋 Review Your Data</h2>
+                        <p className="text-xs text-foreground-secondary/80">
+                            Final check before generating your AI profile
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <Link href="/profile/create" className="btn-secondary px-4 py-2 flex items-center gap-2">
+                    <div className="flex flex-wrap gap-2 md:gap-4 w-full sm:w-auto">
+                        <Link href="/profile/create" className="flex-1 sm:flex-none btn-secondary px-5 py-2 flex items-center justify-center gap-2 hover:bg-background-secondary border border-border/50 text-sm font-medium">
                             ✏️ Edit Data
                         </Link>
                         <button
                             onClick={handleNormalize}
                             disabled={isNormalizing}
-                            className="btn-primary px-4 py-2 flex items-center gap-2"
+                            className="flex-1 sm:flex-none btn-primary px-4 py-2 flex items-center justify-center gap-2"
                         >
                             {isNormalizing ? (
                                 <>
@@ -169,11 +169,11 @@ export default function ReviewPage() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 md:p-8 overflow-x-auto">
-                <div className="flex justify-center">
-                    <div className="flex gap-6">
+            <main className="flex-1 p-4 md:p-8">
+                <div className="max-w-[1400px] mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                         {/* Resume Section - Always Show */}
-                        <div className="glass-card p-6 w-[500px] flex-shrink-0">
+                        <div className="glass-card p-4 md:p-6 w-full flex flex-col">
                             <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
                                 <span className="text-xl">📄</span> Resume
                                 {data.resumes.length > 0 && (
@@ -243,7 +243,7 @@ export default function ReviewPage() {
                         </div>
 
                         {/* LinkedIn Section - Always Show */}
-                        <div className="glass-card p-6 w-[500px] flex-shrink-0">
+                        <div className="glass-card p-4 md:p-6 w-full flex flex-col">
                             <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
                                 <span className="text-xl">💼</span> LinkedIn Profile
                                 {data.linkedin.length > 0 && (
@@ -294,7 +294,7 @@ export default function ReviewPage() {
 
                         {/* Manual Entry Section - Always Show */}
                         {Object.keys(data.manual).length > 0 ? (
-                            <div className="glass-card p-6 w-[500px] flex-shrink-0 max-h-[700px] overflow-y-auto">
+                            <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1 max-h-[800px] overflow-y-auto">
                                 <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
                                     <span className="text-xl">✍️</span> Manual Entry
                                     <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
@@ -321,14 +321,14 @@ export default function ReviewPage() {
                                                 {(data.manual.contact as Record<string, string>).location && (
                                                     <p><span className="text-foreground-secondary">Location:</span> <span className="text-foreground">{(data.manual.contact as Record<string, string>).location}</span></p>
                                                 )}
-                                                {(data.manual.contact as Record<string, string>).linkedin && (
-                                                    <p><span className="text-foreground-secondary">LinkedIn:</span> <span className="text-primary">{(data.manual.contact as Record<string, string>).linkedin}</span></p>
+                                                {(data.manual.contact as Record<string, string>).linkedin_url && (
+                                                    <p><span className="text-foreground-secondary">LinkedIn:</span> <a href={(data.manual.contact as Record<string, string>).linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).linkedin_url}</a></p>
                                                 )}
                                                 {(data.manual.contact as Record<string, string>).github && (
-                                                    <p><span className="text-foreground-secondary">GitHub:</span> <span className="text-primary">{(data.manual.contact as Record<string, string>).github}</span></p>
+                                                    <p><span className="text-foreground-secondary">GitHub:</span> <a href={(data.manual.contact as Record<string, string>).github} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).github}</a></p>
                                                 )}
                                                 {(data.manual.contact as Record<string, string>).portfolio && (
-                                                    <p><span className="text-foreground-secondary">Portfolio:</span> <span className="text-primary">{(data.manual.contact as Record<string, string>).portfolio}</span></p>
+                                                    <p><span className="text-foreground-secondary">Portfolio:</span> <a href={(data.manual.contact as Record<string, string>).portfolio} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).portfolio}</a></p>
                                                 )}
                                             </div>
                                         </div>
@@ -374,7 +374,10 @@ export default function ReviewPage() {
                                                 {(data.manual.education as Array<Record<string, string>>).map((edu, idx) => (
                                                     <div key={idx} className="border-l-2 border-primary/30 pl-3">
                                                         <p className="font-medium text-sm text-foreground">{edu.institution_name}</p>
-                                                        <p className="text-xs text-foreground-secondary">{edu.degree} in {edu.field_of_study}</p>
+                                                        <p className="text-xs text-foreground-secondary">{edu.degree_type}</p>
+                                                        <p className="text-xs text-foreground-secondary">
+                                                            {[edu.city, edu.state, edu.country].filter(Boolean).join(", ")}
+                                                        </p>
                                                         <p className="text-xs text-foreground-secondary">{edu.start_date} - {edu.is_pursuing ? 'Present' : edu.end_date}</p>
                                                         {edu.grade && <p className="text-xs text-foreground-secondary">Grade: {edu.grade}</p>}
                                                     </div>
@@ -392,10 +395,13 @@ export default function ReviewPage() {
                                             <div className="space-y-3">
                                                 {(data.manual.experience as Array<Record<string, string>>).map((exp, idx) => (
                                                     <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                                                        <p className="font-medium text-sm text-foreground">{exp.job_title}</p>
+                                                        <p className="font-medium text-sm text-foreground">{exp.job_role}</p>
                                                         <p className="text-xs text-primary">{exp.company_name}</p>
+                                                        <p className="text-xs text-foreground-secondary">
+                                                            {[exp.city, exp.country].filter(Boolean).join(", ")}
+                                                        </p>
                                                         <p className="text-xs text-foreground-secondary">{exp.start_date} - {exp.is_current ? 'Present' : exp.end_date}</p>
-                                                        {exp.description && <p className="text-xs text-foreground-secondary mt-1">{exp.description}</p>}
+                                                        {exp.job_description && <p className="text-xs text-foreground-secondary mt-1">{exp.job_description}</p>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -414,6 +420,7 @@ export default function ReviewPage() {
                                                         <p className="font-medium text-sm text-foreground">{proj.name}</p>
                                                         {proj.description && <p className="text-xs text-foreground-secondary">{proj.description}</p>}
                                                         {proj.technologies && <p className="text-xs text-primary mt-1">{proj.technologies}</p>}
+                                                        {proj.url && <p className="text-xs mt-1"><a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{proj.url}</a></p>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -443,7 +450,7 @@ export default function ReviewPage() {
                             </div>
                         ) : (
                             /* Placeholder when no manual entry */
-                            <div className="glass-card p-6 w-[500px] flex-shrink-0">
+                            <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1">
                                 <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
                                     <span className="text-xl">✍️</span> Manual Entry
                                 </h3>

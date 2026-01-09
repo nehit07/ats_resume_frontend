@@ -86,7 +86,7 @@ export function ProfileButton() {
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-72 glass-card p-4 z-50 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 mt-2 w-72 glass-card p-4 z-50 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* User Info Header */}
                     <div className="flex items-center gap-3 pb-4 border-b border-border">
                         <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">

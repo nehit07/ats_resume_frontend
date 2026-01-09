@@ -55,11 +55,11 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="border-b border-border">
-                <div className="mx-auto px-6 py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
-                    <Link href="/" className="flex items-center gap-3">
-                        <Image src="/logo.png" alt="Resumify" width={40} height={40} className="rounded-lg" />
-                        <span className="text-2xl font-semibold text-foreground">Resumify</span>
+            <header className="sticky border-b border-border bg-background/50 backdrop-blur-md top-0 h-16 z-30">
+                <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
+                    <Link href="/" className="flex items-center gap-2 md:gap-3">
+                        <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
+                        <span className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Resumify</span>
                     </Link>
                     <ThemeToggle />
                 </div>
