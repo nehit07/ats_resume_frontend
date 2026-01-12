@@ -189,7 +189,7 @@ export default function ReviewPage() {
                                         {/* PDF Viewer */}
                                         {resume.file_type === "pdf" ? (
                                             <iframe
-                                                src={`${API_BASE_URL}/media/${resume.file_url}`}
+                                                src={`${API_BASE_URL}/media/${resume.file_url}#toolbar=0&navpanes=0`}
                                                 className="w-full h-[600px] rounded-lg border border-border"
                                                 title={resume.file_name}
                                             />
@@ -258,7 +258,7 @@ export default function ReviewPage() {
                                         <p className="text-sm font-medium mb-2">{linkedin.file_name}</p>
                                         {/* PDF Viewer */}
                                         <iframe
-                                            src={`${API_BASE_URL}/media/${linkedin.file_url}`}
+                                            src={`${API_BASE_URL}/media/${linkedin.file_url}#toolbar=0&navpanes=0`}
                                             className="w-full h-[600px] rounded-lg border border-border"
                                             title={linkedin.file_name}
                                         />
@@ -293,179 +293,218 @@ export default function ReviewPage() {
                         </div>
 
                         {/* Manual Entry Section - Always Show */}
-                        {Object.keys(data.manual).length > 0 ? (
-                            <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1 max-h-[800px] overflow-y-auto">
-                                <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-                                    <span className="text-xl">✍️</span> Manual Entry
-                                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                                        {Object.keys(data.manual).length} section(s)
-                                    </span>
-                                </h3>
-                                <div className="space-y-5">
-                                    {/* Contact Section */}
-                                    {!!data.manual.contact && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                📇 Contact Information
-                                            </h4>
-                                            <div className="grid grid-cols-1 gap-2 text-sm">
-                                                {(data.manual.contact as Record<string, string>).full_name && (
-                                                    <p><span className="text-foreground-secondary">Name:</span> <span className="text-foreground">{(data.manual.contact as Record<string, string>).full_name}</span></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).email && (
-                                                    <p><span className="text-foreground-secondary">Email:</span> <span className="text-foreground">{(data.manual.contact as Record<string, string>).email}</span></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).phone && (
-                                                    <p><span className="text-foreground-secondary">Phone:</span> <span className="text-foreground">{(data.manual.contact as Record<string, string>).phone}</span></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).location && (
-                                                    <p><span className="text-foreground-secondary">Location:</span> <span className="text-foreground">{(data.manual.contact as Record<string, string>).location}</span></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).linkedin_url && (
-                                                    <p><span className="text-foreground-secondary">LinkedIn:</span> <a href={(data.manual.contact as Record<string, string>).linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).linkedin_url}</a></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).github && (
-                                                    <p><span className="text-foreground-secondary">GitHub:</span> <a href={(data.manual.contact as Record<string, string>).github} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).github}</a></p>
-                                                )}
-                                                {(data.manual.contact as Record<string, string>).portfolio && (
-                                                    <p><span className="text-foreground-secondary">Portfolio:</span> <a href={(data.manual.contact as Record<string, string>).portfolio} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(data.manual.contact as Record<string, string>).portfolio}</a></p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+                        {((): React.ReactNode => {
+                            const m = data.manual || {};
+                            const manualSections = [
+                                {
+                                    id: 'contact',
+                                    hasData: m.contact && typeof m.contact === 'object' && Object.values(m.contact as object).some(v => v && String(v).trim())
+                                },
+                                {
+                                    id: 'summary',
+                                    hasData: !!m.summary && (typeof m.summary === 'string' ? m.summary.trim() : (m.summary as any).text?.trim())
+                                },
+                                {
+                                    id: 'skills',
+                                    hasData: !!m.skills && (typeof m.skills === 'string' ? m.skills.trim() : (m.skills as any).skills?.trim())
+                                },
+                                {
+                                    id: 'education',
+                                    hasData: Array.isArray(m.education) && m.education.length > 0
+                                },
+                                {
+                                    id: 'experience',
+                                    hasData: Array.isArray(m.experience) && m.experience.length > 0
+                                },
+                                {
+                                    id: 'projects',
+                                    hasData: Array.isArray(m.projects) && m.projects.length > 0
+                                },
+                                {
+                                    id: 'achievements',
+                                    hasData: Array.isArray(m.achievements) && m.achievements.length > 0
+                                }
+                            ];
+                            const manualSectionsCount = manualSections.filter(s => s.hasData).length;
 
-                                    {/* Summary Section */}
-                                    {!!data.manual.summary && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                                                📝 Professional Summary
-                                            </h4>
-                                            <p className="text-sm text-foreground-secondary leading-relaxed">
-                                                {(data.manual.summary as Record<string, string>).text || String(data.manual.summary)}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Skills Section */}
-                                    {!!data.manual.skills && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                🛠️ Skills
-                                            </h4>
-                                            <div className="flex flex-wrap gap-2">
-                                                {((data.manual.skills as Record<string, string>).skills || String(data.manual.skills))
-                                                    .split(',')
-                                                    .map((skill: string, idx: number) => (
-                                                        <span key={idx} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                                                            {skill.trim()}
-                                                        </span>
-                                                    ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Education Section */}
-                                    {!!data.manual.education && Array.isArray(data.manual.education) && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                🎓 Education
-                                            </h4>
-                                            <div className="space-y-3">
-                                                {(data.manual.education as Array<Record<string, string>>).map((edu, idx) => (
-                                                    <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                                                        <p className="font-medium text-sm text-foreground">{edu.institution_name}</p>
-                                                        <p className="text-xs text-foreground-secondary">{edu.degree_type}</p>
-                                                        <p className="text-xs text-foreground-secondary">
-                                                            {[edu.city, edu.state, edu.country].filter(Boolean).join(", ")}
-                                                        </p>
-                                                        <p className="text-xs text-foreground-secondary">{edu.start_date} - {edu.is_pursuing ? 'Present' : edu.end_date}</p>
-                                                        {edu.grade && <p className="text-xs text-foreground-secondary">Grade: {edu.grade}</p>}
+                            if (manualSectionsCount > 0) {
+                                return (
+                                    <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1 max-h-[800px] overflow-y-auto">
+                                        <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
+                                            <span className="text-xl">✍️</span> Manual Entry
+                                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                                {manualSectionsCount} section(s)
+                                            </span>
+                                        </h3>
+                                        <div className="space-y-5">
+                                            {/* Contact Section */}
+                                            {!!m.contact && Object.values(m.contact as object).some(v => v) && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        📇 Contact Information
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 gap-2 text-sm">
+                                                        {(m.contact as Record<string, string>).full_name && (
+                                                            <p><span className="text-foreground-secondary">Name:</span> <span className="text-foreground">{(m.contact as Record<string, string>).full_name}</span></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).email && (
+                                                            <p><span className="text-foreground-secondary">Email:</span> <span className="text-foreground">{(m.contact as Record<string, string>).email}</span></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).phone && (
+                                                            <p><span className="text-foreground-secondary">Phone:</span> <span className="text-foreground">{(m.contact as Record<string, string>).phone}</span></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).location && (
+                                                            <p><span className="text-foreground-secondary">Location:</span> <span className="text-foreground">{(m.contact as Record<string, string>).location}</span></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).linkedin_url && (
+                                                            <p><span className="text-foreground-secondary">LinkedIn:</span> <a href={(m.contact as Record<string, string>).linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(m.contact as Record<string, string>).linkedin_url}</a></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).github && (
+                                                            <p><span className="text-foreground-secondary">GitHub:</span> <a href={(m.contact as Record<string, string>).github} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(m.contact as Record<string, string>).github}</a></p>
+                                                        )}
+                                                        {(m.contact as Record<string, string>).portfolio && (
+                                                            <p><span className="text-foreground-secondary">Portfolio:</span> <a href={(m.contact as Record<string, string>).portfolio} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(m.contact as Record<string, string>).portfolio}</a></p>
+                                                        )}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                                </div>
+                                            )}
 
-                                    {/* Experience Section */}
-                                    {!!data.manual.experience && Array.isArray(data.manual.experience) && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                💼 Work Experience
-                                            </h4>
-                                            <div className="space-y-3">
-                                                {(data.manual.experience as Array<Record<string, string>>).map((exp, idx) => (
-                                                    <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                                                        <p className="font-medium text-sm text-foreground">{exp.job_role}</p>
-                                                        <p className="text-xs text-primary">{exp.company_name}</p>
-                                                        <p className="text-xs text-foreground-secondary">
-                                                            {[exp.city, exp.country].filter(Boolean).join(", ")}
-                                                        </p>
-                                                        <p className="text-xs text-foreground-secondary">{exp.start_date} - {exp.is_current ? 'Present' : exp.end_date}</p>
-                                                        {exp.job_description && <p className="text-xs text-foreground-secondary mt-1">{exp.job_description}</p>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                            {/* Summary Section */}
+                                            {!!m.summary && (typeof m.summary === 'string' ? m.summary.trim() : (m.summary as any).text?.trim()) && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                                                        📝 Professional Summary
+                                                    </h4>
+                                                    <p className="text-sm text-foreground-secondary leading-relaxed">
+                                                        {(m.summary as Record<string, string>).text || String(m.summary)}
+                                                    </p>
+                                                </div>
+                                            )}
 
-                                    {/* Projects Section */}
-                                    {!!data.manual.projects && Array.isArray(data.manual.projects) && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                🚀 Projects
-                                            </h4>
-                                            <div className="space-y-3">
-                                                {(data.manual.projects as Array<Record<string, string>>).map((proj, idx) => (
-                                                    <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                                                        <p className="font-medium text-sm text-foreground">{proj.name}</p>
-                                                        {proj.description && <p className="text-xs text-foreground-secondary">{proj.description}</p>}
-                                                        {proj.technologies && <p className="text-xs text-primary mt-1">{proj.technologies}</p>}
-                                                        {proj.url && <p className="text-xs mt-1"><a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{proj.url}</a></p>}
+                                            {/* Skills Section */}
+                                            {!!m.skills && (typeof m.skills === 'string' ? m.skills.trim() : (m.skills as any).skills?.trim()) && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        🛠️ Skills
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {((m.skills as Record<string, string>).skills || String(m.skills))
+                                                            .split(',')
+                                                            .map((skill: string, idx: number) => (
+                                                                <span key={idx} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                                                                    {skill.trim()}
+                                                                </span>
+                                                            ))}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                                </div>
+                                            )}
 
-                                    {/* Achievements Section */}
-                                    {!!data.manual.achievements && Array.isArray(data.manual.achievements) && (
-                                        <div className="bg-background-secondary rounded-lg p-4">
-                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                                🏆 Achievements
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {(data.manual.achievements as Array<Record<string, string>>).map((ach, idx) => (
-                                                    <div key={idx} className="flex items-start gap-2">
-                                                        <span className="text-primary">•</span>
-                                                        <div>
-                                                            <p className="text-sm text-foreground">{ach.title}</p>
-                                                            {ach.description && <p className="text-xs text-foreground-secondary">{ach.description}</p>}
-                                                        </div>
+                                            {/* Education Section */}
+                                            {!!m.education && Array.isArray(m.education) && m.education.length > 0 && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        🎓 Education
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        {(m.education as Array<Record<string, string>>).map((edu, idx) => (
+                                                            <div key={idx} className="border-l-2 border-primary/30 pl-3">
+                                                                <p className="font-medium text-sm text-foreground">{edu.institution_name}</p>
+                                                                <p className="text-xs text-foreground-secondary">{edu.degree_type}</p>
+                                                                <p className="text-xs text-foreground-secondary">
+                                                                    {[edu.city, edu.state, edu.country].filter(Boolean).join(", ")}
+                                                                </p>
+                                                                <p className="text-xs text-foreground-secondary">{edu.start_date} - {edu.is_pursuing ? 'Present' : edu.end_date}</p>
+                                                                {edu.grade && <p className="text-xs text-foreground-secondary">Grade: {edu.grade}</p>}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            )}
+
+                                            {/* Experience Section */}
+                                            {!!m.experience && Array.isArray(m.experience) && m.experience.length > 0 && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        💼 Work Experience
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        {(m.experience as Array<Record<string, string>>).map((exp, idx) => (
+                                                            <div key={idx} className="border-l-2 border-primary/30 pl-3">
+                                                                <p className="font-medium text-sm text-foreground">{exp.job_role}</p>
+                                                                <p className="text-xs text-primary">{exp.company_name}</p>
+                                                                <p className="text-xs text-foreground-secondary">
+                                                                    {[exp.city, exp.country].filter(Boolean).join(", ")}
+                                                                </p>
+                                                                <p className="text-xs text-foreground-secondary">{exp.start_date} - {exp.is_current ? 'Present' : exp.end_date}</p>
+                                                                {exp.job_description && <p className="text-xs text-foreground-secondary mt-1">{exp.job_description}</p>}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Projects Section */}
+                                            {!!m.projects && Array.isArray(m.projects) && m.projects.length > 0 && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        🚀 Projects
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        {(m.projects as Array<Record<string, string>>).map((proj, idx) => (
+                                                            <div key={idx} className="border-l-2 border-primary/30 pl-3">
+                                                                <p className="font-medium text-sm text-foreground">{proj.name}</p>
+                                                                {proj.description && <p className="text-xs text-foreground-secondary">{proj.description}</p>}
+                                                                {proj.technologies && <p className="text-xs text-primary mt-1">{proj.technologies}</p>}
+                                                                {proj.url && <p className="text-xs mt-1"><a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{proj.url}</a></p>}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Achievements Section */}
+                                            {!!m.achievements && Array.isArray(m.achievements) && m.achievements.length > 0 && (
+                                                <div className="bg-background-secondary rounded-lg p-4">
+                                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                        🏆 Achievements
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {(m.achievements as Array<Record<string, string>>).map((ach, idx) => (
+                                                            <div key={idx} className="flex items-start gap-2">
+                                                                <span className="text-primary">•</span>
+                                                                <div>
+                                                                    <p className="text-sm text-foreground">{ach.title}</p>
+                                                                    {ach.description && <p className="text-xs text-foreground-secondary">{ach.description}</p>}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            /* Placeholder when no manual entry */
-                            <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1">
-                                <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-                                    <span className="text-xl">✍️</span> Manual Entry
-                                </h3>
-                                <div className="h-[600px] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center bg-background-secondary/30">
-                                    <div className="text-center">
-                                        <svg className="w-24 h-24 mx-auto mb-4 text-foreground-secondary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                        </svg>
-                                        <p className="text-foreground-secondary font-medium mb-1">No Manual Data Entered</p>
-                                        <p className="text-xs text-foreground-secondary/70">Enter your details on the Create page</p>
                                     </div>
-                                </div>
-                            </div>
-                        )}
+                                );
+                            } else {
+                                return (
+                                    /* Placeholder when no manual entry */
+                                    <div className="glass-card p-4 md:p-6 w-full lg:col-span-2 xl:col-span-1">
+                                        <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
+                                            <span className="text-xl">✍️</span> Manual Entry
+                                        </h3>
+                                        <div className="h-[600px] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center bg-background-secondary/30">
+                                            <div className="text-center">
+                                                <svg className="w-24 h-24 mx-auto mb-4 text-foreground-secondary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                </svg>
+                                                <p className="text-foreground-secondary font-medium mb-1">No Manual Data Entered</p>
+                                                <p className="text-xs text-foreground-secondary/70">Enter your details on the Create page</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 </div>
             </main>

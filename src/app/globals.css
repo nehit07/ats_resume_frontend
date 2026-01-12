@@ -269,6 +269,16 @@ body {
   color: var(--foreground-secondary);
 }
 
+/* Fix for calendar icon visibility in dark mode */
+.dark .input-field {
+  color-scheme: dark;
+}
+
+.dark .input-field::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) brightness(1.2);
+  cursor: pointer;
+}
+
 /* ===== Theme Toggle Button ===== */
 .theme-toggle {
   padding: 8px;
@@ -285,4 +295,16 @@ body {
 
 .theme-toggle:hover {
   background: var(--background-secondary);
+}
+
+/* ===== Custom Utilities ===== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
