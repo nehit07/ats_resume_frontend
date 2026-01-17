@@ -308,3 +308,95 @@ body {
   scrollbar-width: none;
   /* Firefox */
 }
+
+/* ===== Resume Preview Styles ===== */
+.a4-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  background-color: white;
+  color: black !important;
+  padding: 0.6in;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.25;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-section-header {
+  font-size: 11pt;
+  font-weight: 700;
+  border-bottom: 1.5px solid black;
+  text-transform: uppercase;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  width: 100%;
+}
+
+.resume-content-text {
+  font-size: 9.5pt;
+  text-align: justify;
+}
+
+.resume-item-title {
+  font-size: 10.5pt;
+  font-weight: 700;
+}
+
+.resume-item-subtitle {
+  font-size: 10pt;
+  font-style: italic;
+}
+
+.resume-date-location {
+  font-size: 10pt;
+}
+
+.resume-bullet-list {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  margin-top: 0.2rem;
+}
+
+.resume-bullet-item {
+  font-size: 9.5pt;
+  margin-bottom: 0.125rem;
+}
+
+/* Page Break Helper for UI */
+.resume-page-break {
+  height: 40px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.resume-page-break::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.resume-page-break span {
+  background: #f1f5f9;
+  padding: 0 12px;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  z-index: 1;
+}

@@ -29,6 +29,11 @@ export default function RegisterPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError("");
+        if (!email.includes("@")) {
+            setError("Email must contain '@'");
+            setIsLoading(false);
+            return;
+        }
 
         // Validation
         if (password !== confirmPassword) {
@@ -69,7 +74,7 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
-            <header className="sticky border-b border-border bg-background/50 backdrop-blur-md top-0 h-16 z-30">
+            <header className="sticky border-b border-border bg-background/50 backdrop-blur-md top-0 z-30">
                 <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
                     <Link href="/" className="flex items-center gap-2 md:gap-3">
                         <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
@@ -80,11 +85,11 @@ export default function RegisterPage() {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 flex items-center justify-center px-4 py-8">
+            <main className="flex-1 flex items-center justify-center px-4 py-4">
                 <div className="w-full max-w-md">
-                    <div className="glass-card p-8">
+                    <div className="glass-card p-5">
                         {/* Title */}
-                        <div className="text-center mb-8">
+                        <div className="text-center mb-4">
                             <h2 className="text-2xl font-semibold text-foreground mb-2">
                                 Create your account
                             </h2>
@@ -101,43 +106,58 @@ export default function RegisterPage() {
                         )}
 
                         {/* Register Form */}
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-2" noValidate>
                             <div>
-                                <label
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-foreground mb-2"
-                                >
-                                    Email
-                                </label>
+                                <div className="flex justify-between items-center mb-1 md:mb-2">
+                                    <label
+                                        htmlFor="email"
+                                        className="block text-sm font-medium text-foreground"
+                                    >
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
+                                    {email.length > 0 && !email.includes("@") && (
+                                        <span className="text-[10px] font-bold text-red-500 animate-pulse flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                                            Missing &apos;@&apos;
+                                        </span>
+                                    )}
+                                </div>
                                 <input
                                     type="email"
                                     id="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="input-field"
+                                    className={`input-field ${email.length > 0 && !email.includes("@") ? 'border-red-500/50 bg-red-500/5' : ''}`}
                                     placeholder="you@example.com"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-foreground mb-2"
-                                >
-                                    Password
-                                </label>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label
+                                        htmlFor="password"
+                                        className="block text-sm font-medium text-foreground"
+                                    >
+                                        Password <span className="text-red-500">*</span>
+                                    </label>
+                                    {password.length > 0 && password.length < 8 && (
+                                        <span className="text-[10px] font-bold text-red-500 animate-pulse">
+                                            {8 - password.length} characters remaining
+                                        </span>
+                                    )}
+                                </div>
                                 <input
                                     type="password"
                                     id="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field"
+                                    className={`input-field ${password.length > 0 && password.length < 8 ? 'border-red-500/50 bg-red-500/5' : ''}`}
                                     placeholder="Password"
                                     required
                                     minLength={8}
                                 />
-                                <p className="mt-1 text-xs text-foreground-secondary">
+                                <p className="mt-0.5 text-[10px] text-foreground-secondary">
                                     Must be at least 8 characters
                                 </p>
                             </div>
@@ -147,7 +167,7 @@ export default function RegisterPage() {
                                     htmlFor="confirmPassword"
                                     className="block text-sm font-medium text-foreground mb-2"
                                 >
-                                    Confirm Password
+                                    Confirm Password <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="password"
@@ -170,7 +190,7 @@ export default function RegisterPage() {
                         </form>
 
                         {/* Divider */}
-                        <div className="relative my-6">
+                        <div className="relative my-2">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-border"></div>
                             </div>
@@ -182,7 +202,7 @@ export default function RegisterPage() {
                         </div>
 
                         {/* OAuth Buttons */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <button
                                 onClick={() => handleOAuthLogin("github")}
                                 className="btn-secondary w-full"
@@ -231,7 +251,7 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Login Link */}
-                        <p className="mt-8 text-center text-sm text-foreground-secondary">
+                        <p className="mt-4 text-center text-sm text-foreground-secondary">
                             Already have an account?{" "}
                             <Link
                                 href="/login"

@@ -19,6 +19,11 @@ export default function DashboardPage() {
         }
     }, [isAuthenticated, isLoading, router]);
 
+    // Simple direct navigation - Normalize page will handle empty state
+    const handleNormalizeClick = () => {
+        router.push("/profile/normalize");
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -51,8 +56,8 @@ export default function DashboardPage() {
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-[1400px] mx-auto">
                     {/* Welcome Section */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">
+                    <div className="mb-6">
+                        <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">
                             Welcome back! 👋
                         </h2>
                         <p className="text-foreground-secondary">
@@ -64,11 +69,11 @@ export default function DashboardPage() {
                     <h3 className="text-lg font-medium text-foreground mb-4">
                         Quick Actions
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Resume Creation Card */}
-                        <div className="glass-card p-6 opacity-60">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-primary/10 rounded-lg">
+                        <div className="glass-card p-5 opacity-60">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="p-2.5 bg-primary/10 rounded-lg">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -91,11 +96,11 @@ export default function DashboardPage() {
                                     Coming Soon
                                 </span>
                             </div>
-                            <h4 className="font-medium text-foreground mb-2">
+                            <h4 className="font-medium text-foreground mb-1">
                                 Start Resume Creation
                             </h4>
-                            <p className="text-sm text-foreground-secondary mb-4">
-                                Create ATS-optimized resumes with AI assistance
+                            <p className="text-sm text-foreground-secondary mb-3">
+                                Create ATS-optimized resumes with AI
                             </p>
                             <button disabled className="btn-primary w-full opacity-50 cursor-not-allowed">
                                 Create Resume
@@ -103,9 +108,9 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Profile Creation Card */}
-                        <div className="glass-card p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-primary/10 rounded-lg">
+                        <div className="glass-card p-5">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="p-2.5 bg-primary/10 rounded-lg">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -125,19 +130,55 @@ export default function DashboardPage() {
                                     </svg>
                                 </div>
                             </div>
-                            <h4 className="font-medium text-foreground mb-2">
+                            <h4 className="font-medium text-foreground mb-1">
                                 Create Your Profile
                             </h4>
-                            <p className="text-sm text-foreground-secondary mb-4">
-                                Build your professional profile for personalized resumes
+                            <p className="text-sm text-foreground-secondary mb-3">
+                                Build your profile for personalized resumes
                             </p>
                             <Link href="/profile/create" className="btn-primary w-full block text-center">
                                 Create Profile
                             </Link>
+                        </div>
+
+                        {/* Normalize IDE Card */}
+                        <div className="glass-card p-5">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="p-2.5 bg-green-500/10 rounded-lg">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="text-green-500"
+                                    >
+                                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h4 className="font-medium text-foreground mb-1">
+                                Access Structured Data
+                            </h4>
+                            <p className="text-sm text-foreground-secondary mb-3">
+                                Normalize and merge your data with AI
+                            </p>
+                            <button
+                                onClick={handleNormalizeClick}
+                                className="btn-primary w-full bg-green-600 hover:bg-green-700"
+                            >
+                                Open
+                            </button>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
     );
+
 }
