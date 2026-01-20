@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProfileButton } from "@/components/ProfileButton";
+import ATSResumePreview from "@/components/ATSResumePreview";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -30,7 +31,7 @@ interface AllSections {
 
 const SECTION_CONFIG: { key: SectionType; label: string; icon: string }[] = [
     { key: "contact", label: "Contact Info", icon: "👤" },
-    { key: "summary", label: "Summary", icon: "📝" },
+    { key: "summary", label: "Summary", icon: "📄" },
     { key: "skills", label: "Skills", icon: "🛠️" },
     { key: "education", label: "Education", icon: "🎓" },
     { key: "experience", label: "Experience", icon: "💼" },
@@ -56,6 +57,7 @@ export default function NormalizePage() {
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isMerging, setIsMerging] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" | null }>({ message: "", type: null });
+    const [showMobilePreview, setShowMobilePreview] = useState(false);
 
     // Source toggle state - which sources are ENABLED for merge
     const [enabledSources, setEnabledSources] = useState<Set<SourceType>>(new Set(["resume", "linkedin", "manual"]));
@@ -67,40 +69,57 @@ export default function NormalizePage() {
 
     // Generated content state - persists across section navigation
     const [generatedContent, setGeneratedContent] = useState<{ [section: string]: any }>({});
+    const [sourceMeta, setSourceMeta] = useState<{ resume_id: string | null; linkedin_id: string | null } | null>(null);
+    const [isInitialMount, setIsInitialMount] = useState(true);
 
     // LocalStorage key for backup
     const STORAGE_KEY = `resumify_generated_${user?.id || 'guest'}`;
 
-    // Restore generated content from localStorage on mount
+    // Data restoration and cache invalidation logic
     useEffect(() => {
-        if (user?.id) {
+        if (user?.id && sourceMeta && isInitialMount) {
             try {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    setGeneratedContent(parsed.generated || {});
-                    setEditedContent(parsed.edited || {});
+
+                    // Check if sources have changed since last save
+                    const metaMatch =
+                        parsed.sourceMeta?.resume_id === sourceMeta.resume_id &&
+                        parsed.sourceMeta?.linkedin_id === sourceMeta.linkedin_id;
+
+                    if (metaMatch) {
+                        setGeneratedContent(parsed.generated || {});
+                        setEditedContent(parsed.edited || {});
+                    } else {
+                        console.log("Sources changed, clearing stale cache");
+                        setGeneratedContent({});
+                        setEditedContent({});
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
                 }
+                setIsInitialMount(false);
             } catch (e) {
-                console.error("Failed to restore from localStorage:", e);
+                console.error("Failed to handle localStorage:", e);
             }
         }
-    }, [user?.id, STORAGE_KEY]);
+    }, [user?.id, STORAGE_KEY, sourceMeta, isInitialMount]);
 
     // Save generated and edited content to localStorage whenever they change
     useEffect(() => {
-        if (user?.id && (Object.keys(generatedContent).length > 0 || Object.keys(editedContent).length > 0)) {
+        if (user?.id && sourceMeta && (Object.keys(generatedContent).length > 0 || Object.keys(editedContent).length > 0)) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
                     generated: generatedContent,
                     edited: editedContent,
+                    sourceMeta: sourceMeta,
                     savedAt: new Date().toISOString()
                 }));
             } catch (e) {
                 console.error("Failed to save to localStorage:", e);
             }
         }
-    }, [generatedContent, editedContent, user?.id, STORAGE_KEY]);
+    }, [generatedContent, editedContent, user?.id, STORAGE_KEY, sourceMeta]);
 
     // Auto-dismiss toast
     useEffect(() => {
@@ -131,6 +150,7 @@ export default function NormalizePage() {
             if (response.ok) {
                 const data = await response.json();
                 setSections(data.sections);
+                setSourceMeta(data.source_meta);
 
                 // Set initial active source to first available
                 const currentSection = data.sections[activeSection];
@@ -247,74 +267,56 @@ export default function NormalizePage() {
         }
     };
 
-    // Generate merged content for ALL sections at once
+    // Generate merged content for ALL sections at once using consolidated API
     const handleGenerateAll = async () => {
         if (!accessToken) return;
 
         setIsMerging(true);
         try {
-            const sectionsToGenerate = SECTION_CONFIG.map(s => s.key);
-            const results: { [key: string]: any } = {};
-            let successCount = 0;
-            let errorCount = 0;
+            // Get all sections that have sources available
+            const sectionsToGenerate = SECTION_CONFIG.filter(s =>
+                sections[s.key]?.has_sources?.some(source => enabledSources.has(source))
+            ).map(s => s.key);
 
-            // Generate for all sections in parallel
-            const promises = sectionsToGenerate.map(async (sectionKey) => {
-                const currentSection = sections[sectionKey];
-                if (!currentSection) return null;
+            if (sectionsToGenerate.length === 0) {
+                setToast({ message: "No source data enabled for any section", type: "error" });
+                setIsMerging(false);
+                return;
+            }
 
-                // Only include sources that are both available AND enabled
-                const sources = (currentSection.has_sources || []).filter(
-                    source => enabledSources.has(source)
-                );
-
-                if (sources.length === 0) return null;
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/ingestion/merge/${sectionKey}/`, {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ sources }),
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        results[sectionKey] = data.generated;
-                        successCount++;
-                    } else {
-                        errorCount++;
-                    }
-                } catch {
-                    errorCount++;
-                }
+            const response = await fetch(`${API_BASE_URL}/api/ingestion/batch-merge/`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    sections: sectionsToGenerate,
+                    sources: Array.from(enabledSources)
+                }),
             });
 
-            await Promise.all(promises);
+            if (response.ok) {
+                const data = await response.json();
 
-            // Update all generated content at once
-            setGeneratedContent(prev => ({
-                ...prev,
-                ...results,
-            }));
+                // Update all generated content at once
+                setGeneratedContent(prev => ({
+                    ...prev,
+                    ...data.results,
+                }));
 
-            if (successCount > 0) {
+                const successCount = Object.keys(data.results).length;
                 setToast({
-                    message: `Generated content for ${successCount} section${successCount > 1 ? 's' : ''}!`,
+                    message: `Success! Generated content for ${successCount} sections.`,
                     type: "success"
                 });
-            }
-            if (errorCount > 0) {
-                setToast({
-                    message: `Failed to generate ${errorCount} section${errorCount > 1 ? 's' : ''}`,
-                    type: "error"
-                });
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                setToast({ message: errorData.error || "Failed to generate all content", type: "error" });
             }
         } catch (error) {
-            console.error("Generate all failed:", error);
-            setToast({ message: "Failed to generate content", type: "error" });
+            console.error("Batch merge failed:", error);
+            setToast({ message: "Failed to connect to generator", type: "error" });
         } finally {
             setIsMerging(false);
         }
@@ -611,37 +613,39 @@ export default function NormalizePage() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col relative">
+        <div className="h-screen flex flex-col relative overflow-hidden">
             {/* Blur Overlay when no data */}
             {showNoDataOverlay && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="glass-card p-8 max-w-md w-full mx-4 text-center shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <div className="text-6xl mb-4">📝</div>
-                        <h2 className="text-xl font-bold text-foreground mb-2">
-                            No Data Available
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-xl">
+                    <div className="glass-card p-10 max-w-lg w-full mx-4 text-center shadow-[0_0_50px_rgba(99,102,241,0.2)] border-primary/20 animate-in fade-in zoom-in duration-500">
+                        <div className="text-7xl mb-6 animate-bounce">📝</div>
+                        <h2 className="text-2xl font-bold text-foreground mb-3">
+                            No Content Ready Yet
                         </h2>
-                        <p className="text-foreground-secondary mb-6">
-                            You need to first upload your resume or add your details on the Create Profile page and click <strong>&quot;Get My Data&quot;</strong> to process it.
+                        <p className="text-foreground-secondary mb-8 text-lg leading-relaxed">
+                            To see your resume flow here, you first need to upload your sources or add manual details in the <strong>Create Profile</strong> page.
                         </p>
-                        <Link
-                            href="/profile/create"
-                            className="btn-primary w-full block text-center text-lg py-3"
-                        >
-                            Go to Create Profile
-                        </Link>
-                        <Link
-                            href="/dashboard"
-                            className="text-foreground-secondary hover:text-foreground text-sm mt-4 inline-block"
-                        >
-                            Back to Dashboard
-                        </Link>
+                        <div className="flex flex-col gap-3">
+                            <Link
+                                href="/profile/create"
+                                className="btn-primary w-full text-center text-lg py-4 shadow-xl shadow-primary/20"
+                            >
+                                Start Creating Profile
+                            </Link>
+                            <Link
+                                href="/dashboard"
+                                className="text-foreground-secondary hover:text-foreground text-sm font-medium transition-colors"
+                            >
+                                Go Back to Dashboard
+                            </Link>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Header - Same as Create page */}
-            <header className={`sticky border-b border-primary/0 bg-background/50 backdrop-blur-md top-0 h-16 z-30 ${showNoDataOverlay ? 'pointer-events-none' : ''}`}>
-                <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
+            <header className={`shrink-0 border-b border-white/10 bg-background/50 backdrop-blur-md h-16 z-30 ${showNoDataOverlay ? 'pointer-events-none' : ''}`}>
+                <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
                     <Link href="/dashboard" className="flex items-center gap-2 md:gap-3">
                         <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
                         <span className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Resumify</span>
@@ -654,7 +658,7 @@ export default function NormalizePage() {
             </header>
 
             {/* Sticky Action Bar */}
-            <div className="sticky top-16 z-20 bg-background/50 backdrop-blur-xl border-b border-primary/0">
+            <div className="shrink-0 bg-background/50 backdrop-blur-xl border-b border-white/10">
                 <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <h1 className="text-lg md:text-xl font-semibold text-foreground">
@@ -713,17 +717,17 @@ export default function NormalizePage() {
                 </div>
             </div>
 
-            {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-[1400px] mx-auto">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        {/* Section Sidebar */}
-                        <aside className="w-full lg:w-64 shrink-0">
-                            <div className="glass-card p-2 md:p-4 lg:sticky lg:top-40 overflow-hidden">
-                                <h3 className="hidden lg:block text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-3 px-2">
-                                    Sections
-                                </h3>
-                                <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0 no-scrollbar">
+            {/* Main Content - 35% Editor / 65% Preview Split */}
+            <main className="flex-1 overflow-hidden p-4 md:p-6">
+                <div className="h-full max-w-[1400px] mx-auto">
+                    <div className="h-full flex flex-col xl:flex-row gap-6">
+
+                        {/* Left Panel - Editor (35%) */}
+                        <div className="w-full xl:w-[38%] h-full flex flex-col gap-4 overflow-hidden">
+
+                            {/* Section Navigation (Horizontal Pills) */}
+                            <div className="glass-card p-3">
+                                <div className="flex flex-wrap gap-1.5">
                                     {SECTION_CONFIG.map(section => {
                                         const sectionData = sections[section.key];
                                         const hasSources = sectionData?.has_sources?.length > 0;
@@ -733,29 +737,29 @@ export default function NormalizePage() {
                                             <button
                                                 key={section.key}
                                                 onClick={() => setActiveSection(section.key)}
-                                                className={`flex-shrink-0 lg:w-full flex items-center gap-2 lg:gap-3 px-3 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-left transition-all duration-200 ${activeSection === section.key
-                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeSection === section.key
+                                                    ? "bg-primary text-primary-foreground shadow-md"
                                                     : hasSources
-                                                        ? "hover:bg-background-secondary text-foreground"
-                                                        : "hover:bg-background-secondary/50 text-foreground-secondary opacity-60"
+                                                        ? "bg-background-secondary hover:bg-primary/10 text-foreground"
+                                                        : "bg-background-secondary/50 text-foreground-secondary opacity-60"
                                                     }`}
                                             >
-                                                <span className="text-base lg:text-lg">{section.icon}</span>
-                                                <span className="font-medium text-xs lg:text-sm whitespace-nowrap">{section.label}</span>
+                                                <span>{section.icon}</span>
+                                                <span className="hidden sm:inline">{section.label}</span>
                                                 {hasGenerated && (
-                                                    <span className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-green-500"></span>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                                                 )}
                                             </button>
                                         );
                                     })}
-                                </nav>
+                                </div>
 
                                 {/* Generate All Button */}
-                                <div className="mt-4 pt-4 border-t border-border/50">
+                                <div className="mt-3 pt-3 border-t border-border/50">
                                     <button
                                         onClick={handleGenerateAll}
                                         disabled={isMerging}
-                                        className="w-full btn-primary py-2 flex items-center justify-center shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full btn-primary py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isMerging ? (
                                             <>
@@ -769,158 +773,213 @@ export default function NormalizePage() {
                                             </>
                                         )}
                                     </button>
-                                    <p className="text-xs text-foreground-secondary text-center mt-2">
-                                        Generates AI content for all sections at once
-                                    </p>
                                 </div>
                             </div>
-                        </aside>
 
-                        {/* Main Content Area */}
-                        <div className="flex-1 min-w-0">
-                            {isDataLoading ? (
-                                <div className="flex items-center justify-center py-20">
-                                    <div className="animate-pulse text-foreground-secondary">Loading data...</div>
+                            {/* Section Editor */}
+                            <div className="glass-card p-4 flex-1 overflow-hidden flex flex-col">
+                                {/* Section Header */}
+                                <div className="flex items-center justify-between mb-3 pb-3 border-b border-border/50">
+                                    <h2 className="text-lg font-semibold text-foreground capitalize flex items-center gap-2">
+                                        <span>{SECTION_CONFIG.find(s => s.key === activeSection)?.icon}</span>
+                                        {activeSection.replace(/_/g, " ")}
+                                    </h2>
                                 </div>
-                            ) : (
-                                <div className="glass-card overflow-hidden">
-                                    {/* Section Header with Tabs */}
-                                    <div className="border-b border-border/50 p-4 md:p-6">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                            <h2 className="text-xl font-semibold text-foreground capitalize flex items-center gap-2">
-                                                <span>{SECTION_CONFIG.find(s => s.key === activeSection)?.icon}</span>
-                                                {activeSection.replace(/_/g, " ")}
-                                            </h2>
 
-                                            {/* Source Tabs */}
-                                            {availableSources.length > 0 && (
-                                                <div className="flex gap-2">
-                                                    {availableSources.map(source => (
+                                {/* Source Tabs */}
+                                {availableSources.length > 0 && (
+                                    <div className="flex gap-1.5 mb-3">
+                                        {availableSources.map(source => (
+                                            <button
+                                                key={source}
+                                                onClick={() => setActiveSource(source)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeSource === source
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-background-secondary text-foreground hover:bg-primary/10"
+                                                    }`}
+                                            >
+                                                {SOURCE_CONFIG[source].icon} {SOURCE_CONFIG[source].label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Content Area - Scrollable */}
+                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                    {isDataLoading ? (
+                                        <div className="flex items-center justify-center py-10">
+                                            <div className="animate-pulse text-foreground-secondary">Loading...</div>
+                                        </div>
+                                    ) : availableSources.length === 0 ? (
+                                        <div className="text-center py-10 text-foreground-secondary">
+                                            <div className="text-4xl mb-2">📭</div>
+                                            <p className="text-sm">No source data available for this section</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Source Preview */}
+                                            {activeSource && currentSectionData?.[activeSource] && (
+                                                <div className="mb-4">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="text-xs font-semibold text-foreground-secondary uppercase">
+                                                            {SOURCE_CONFIG[activeSource].label} Data
+                                                        </h4>
                                                         <button
-                                                            key={source}
-                                                            onClick={() => setActiveSource(source)}
-                                                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${activeSource === source
-                                                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                                                                : "bg-background-secondary text-foreground hover:bg-primary/10 border border-border/50"
-                                                                }`}
+                                                            onClick={() => toggleSource(activeSource)}
+                                                            className={`text-xs px-2 py-1 rounded ${enabledSources.has(activeSource) ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}`}
                                                         >
-                                                            {SOURCE_CONFIG[source].icon} {SOURCE_CONFIG[source].label}
+                                                            {enabledSources.has(activeSource) ? "✓ Enabled" : "✕ Disabled"}
                                                         </button>
-                                                    ))}
+                                                    </div>
+                                                    <div className="bg-background-secondary/50 rounded-lg p-3 text-xs">
+                                                        {renderDataContent(currentSectionData[activeSource])}
+                                                    </div>
                                                 </div>
                                             )}
-                                        </div>
-                                    </div>
 
-                                    {/* Data Content */}
-                                    <div className="p-4 md:p-6">
-                                        {availableSources.length === 0 ? (
-                                            <div className="text-center py-12">
-                                                <div className="text-4xl mb-4">📭</div>
-                                                <h3 className="text-lg font-medium text-foreground mb-2">
-                                                    No data available
-                                                </h3>
-                                                <p className="text-foreground-secondary mb-4">
-                                                    No sources have data for this section.
-                                                </p>
-                                                <Link
-                                                    href="/profile/create"
-                                                    className="btn-primary inline-flex items-center gap-2"
+                                            {/* Regenerate Button */}
+                                            <div className="mb-4">
+                                                <button
+                                                    onClick={handleGenerate}
+                                                    disabled={isMerging || availableSources.length === 0}
+                                                    className="btn-secondary w-full py-2 flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
                                                 >
-                                                    <span>Add Data</span>
-                                                </Link>
+                                                    {isMerging ? (
+                                                        <>
+                                                            <span className="animate-spin">⏳</span>
+                                                            <span>Generating...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>🔄</span>
+                                                            <span>Regenerate This Section</span>
+                                                        </>
+                                                    )}
+                                                </button>
                                             </div>
-                                        ) : (
-                                            <div>
-                                                {/* Source Data Display */}
-                                                <div className="mb-6">
-                                                    <div className="flex items-center gap-2 mb-4">
-                                                        <span className="text-lg">{SOURCE_CONFIG[activeSource!]?.icon}</span>
-                                                        <h4 className="text-sm font-medium text-foreground-secondary">
-                                                            Data from {SOURCE_CONFIG[activeSource!]?.label}
-                                                            {activeSource === "manual" && (
-                                                                <Link
-                                                                    href="/profile/create"
-                                                                    className="ml-2 text-primary hover:text-primary/80 text-xs"
-                                                                >
-                                                                    (Edit on Create Page)
-                                                                </Link>
-                                                            )}
-                                                        </h4>
-                                                    </div>
-                                                    <div className="bg-background-secondary rounded-xl p-4 border border-border/50">
-                                                        {renderDataContent(currentSectionData?.[activeSource!])}
-                                                    </div>
-                                                </div>
 
-                                                {/* Generate This Section Button */}
-                                                <div className="pt-4 border-t border-border/50">
-                                                    <button
-                                                        onClick={handleGenerate}
-                                                        disabled={isMerging || availableSources.length === 0}
-                                                        className="btn-secondary w-full sm:w-auto px-6 py-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                                                    >
-                                                        {isMerging ? (
-                                                            <>
-                                                                <span className="animate-spin">⏳</span>
-                                                                <span>Generating...</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span>🔄</span>
-                                                                <span>Regenerate This Section</span>
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </div>
-
-                                                {/* Generated Content - Editable */}
-                                                {generatedContent[activeSection] && (
-                                                    <div className="mt-6 p-4 bg-green-500/5 rounded-xl border border-green-500/20">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-green-600">✓</span>
-                                                                <h4 className="text-sm font-semibold text-green-600">
-                                                                    Generated Content
-                                                                </h4>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => {
-                                                                    if (!isEditing) {
-                                                                        // Initialize edited content when entering edit mode
-                                                                        setEditedContent(prev => ({
-                                                                            ...prev,
-                                                                            [activeSection]: JSON.parse(JSON.stringify(generatedContent[activeSection]))
-                                                                        }));
-                                                                    }
-                                                                    setIsEditing(!isEditing);
-                                                                }}
-                                                                className={`text-xs px-3 py-1.5 rounded-lg transition-all ${isEditing
-                                                                    ? "bg-primary text-primary-foreground"
-                                                                    : "bg-background-secondary text-foreground-secondary hover:bg-primary/10"
-                                                                    }`}
-                                                            >
-                                                                {isEditing ? "✓ Done Editing" : "✏️ Edit"}
-                                                            </button>
+                                            {/* Generated Content */}
+                                            {generatedContent[activeSection] && (
+                                                <div className="bg-green-500/5 rounded-lg p-3 border border-green-500/20">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-green-600">✓</span>
+                                                            <h4 className="text-xs font-semibold text-green-600">Generated Content</h4>
                                                         </div>
+                                                        <button
+                                                            onClick={() => setIsEditing(!isEditing)}
+                                                            className={`text-xs px-2 py-1 rounded transition-all ${isEditing
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "bg-background-secondary text-foreground-secondary hover:bg-primary/10"
+                                                                }`}
+                                                        >
+                                                            {isEditing ? "✓ Done" : "✍️ Edit"}
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-xs overflow-y-auto">
                                                         {isEditing ? (
-                                                            <div className="bg-background rounded-lg p-4 border border-border/50">
-                                                                {renderEditableContent(getCurrentContent())}
-                                                            </div>
+                                                            renderEditableContent(getCurrentContent())
                                                         ) : (
                                                             renderDataContent(getCurrentContent() || generatedContent[activeSection])
                                                         )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Panel - Live Preview (62%) */}
+                        <div className="w-full xl:w-[62%] h-full hidden xl:block overflow-hidden">
+                            <div className="glass-card h-full flex flex-col p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-semibold text-foreground-secondary uppercase tracking-wider flex items-center gap-2">
+                                        <span>📄</span> Live Resume Preview
+                                    </h3>
+                                    <span className="text-xs text-foreground-secondary bg-background-secondary px-2 py-1 rounded">
+                                        Auto-updates as you edit
+                                    </span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-800 rounded-lg p-6 shadow-inner flex items-start justify-center custom-scrollbar">
+                                    <div className="origin-top py-4">
+                                        {(() => {
+                                            const getContent = (key: string) => {
+                                                if (hasActualContent(editedContent[key])) return editedContent[key];
+                                                if (hasActualContent(generatedContent[key])) return generatedContent[key];
+                                                return null;
+                                            };
+                                            return (
+                                                <ATSResumePreview
+                                                    contact={getContent("contact")}
+                                                    summary={getContent("summary")}
+                                                    skills={getContent("skills")}
+                                                    education={getContent("education")}
+                                                    experience={getContent("experience")}
+                                                    projects={getContent("projects")}
+                                                    achievements={getContent("achievements")}
+                                                    certifications={getContent("certifications")}
+                                                    scale={0.55}
+                                                />
+                                            );
+                                        })()}
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
+
+                        {/* Mobile Preview FAB */}
+                        <button
+                            className="xl:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center text-2xl hover:scale-110 transition-transform"
+                            onClick={() => setShowMobilePreview(true)}
+                        >
+                            📄
+                        </button>
+
                     </div>
                 </div>
             </main>
+
+            {/* Mobile Preview Modal */}
+            {showMobilePreview && (
+                <div className="fixed inset-0 z-[110] bg-background/80 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/100">
+                        <h3 className="font-semibold flex items-center gap-2 text-foreground">
+                            <span>📄</span> Resume Preview
+                        </h3>
+                        <button
+                            onClick={() => setShowMobilePreview(false)}
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-background-secondary hover:bg-primary/10 transition-colors text-foreground"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 p-4 pb-20">
+                        <div className="mx-auto w-fit">
+                            <ATSResumePreview
+                                contact={editedContent.contact || generatedContent.contact || null}
+                                summary={editedContent.summary || generatedContent.summary || null}
+                                skills={editedContent.skills || generatedContent.skills || null}
+                                education={editedContent.education || generatedContent.education || null}
+                                experience={editedContent.experience || generatedContent.experience || null}
+                                projects={editedContent.projects || generatedContent.projects || null}
+                                achievements={editedContent.achievements || generatedContent.achievements || null}
+                                certifications={editedContent.certifications || generatedContent.certifications || null}
+                                scale={0.4} // Scale down for mobile
+                            />
+                        </div>
+                    </div>
+                    <div className="p-4 border-t border-border/50 bg-background/100">
+                        <button
+                            onClick={() => setShowMobilePreview(false)}
+                            className="w-full btn-primary py-3 rounded-xl shadow-lg shadow-primary/20"
+                        >
+                            Back to Editor
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Toast Notification */}
             {toast.type && (

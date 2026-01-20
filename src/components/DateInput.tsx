@@ -7,6 +7,7 @@ interface DateInputProps {
     onChange: (value: string) => void;
     disabled?: boolean;
     placeholder?: string;
+    error?: boolean;
 }
 
 const months = [
@@ -28,7 +29,7 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
 
-export default function DateInput({ value, onChange, disabled = false, placeholder }: DateInputProps) {
+export default function DateInput({ value, onChange, disabled = false, placeholder, error = false }: DateInputProps) {
     const [month, setMonth] = useState("");
     const [year, setYear] = useState("");
 
@@ -79,7 +80,7 @@ export default function DateInput({ value, onChange, disabled = false, placehold
                 value={month}
                 onChange={(e) => handleMonthChange(e.target.value)}
                 disabled={disabled}
-                className="flex-1 px-3 py-2 rounded-lg bg-background-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                className={`flex-1 px-3 py-2 rounded-lg bg-background-secondary border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer ${error && !month ? 'border-red-500 bg-red-500/5 transition-colors' : 'border-border'}`}
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px' }}
             >
                 <option value="">{placeholder ? "Month" : "Select Month"}</option>
@@ -95,7 +96,7 @@ export default function DateInput({ value, onChange, disabled = false, placehold
                 value={year}
                 onChange={(e) => handleYearChange(e.target.value)}
                 disabled={disabled}
-                className="w-24 px-3 py-2 rounded-lg bg-background-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                className={`w-24 px-3 py-2 rounded-lg bg-background-secondary border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer ${error && !year ? 'border-red-500 bg-red-500/5 transition-colors' : 'border-border'}`}
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px' }}
             >
                 <option value="">{placeholder ? "Year" : "Year"}</option>

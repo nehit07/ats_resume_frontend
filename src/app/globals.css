@@ -2,27 +2,27 @@
 
 /* ===== CSS Variables for Theming ===== */
 :root {
-  /* Light mode (default) */
-  --background: #fafafa;
-  --background-secondary: #ffffff;
-  --foreground: #18181b;
-  --foreground-secondary: #71717a;
-  --border: #e5e7eb;
-  --card: #ffffff;
-  --card-foreground: #18181b;
+  /* Light mode (default) - Softer, soothing palette */
+  --background: #f8fafc;
+  --background-secondary: rgba(255, 255, 255, 0.5);
+  --foreground: #1e293b;
+  --foreground-secondary: #64748b;
+  --border: rgba(226, 232, 240, 0.8);
+  --card: rgba(255, 255, 255, 0.6);
+  --card-foreground: #1e293b;
 
   /* Primary colors */
   --primary: #6366f1;
   --primary-foreground: #ffffff;
 
   /* Gradient blob colors - Light mode (more visible, soft pastel tones) */
-  --gradient-1: rgba(180, 160, 220, 0.32);
-  --gradient-2: rgba(140, 160, 230, 0.28);
-  --gradient-3: rgba(120, 200, 190, 0.25);
-  --gradient-4: rgba(220, 140, 180, 0.28);
-  --gradient-5: rgba(130, 200, 220, 0.26);
-  --gradient-6: rgba(160, 180, 240, 0.30);
-  --gradient-7: rgba(180, 150, 200, 0.28);
+  --gradient-1: rgba(180, 160, 220, 0.4);
+  --gradient-2: rgba(140, 160, 230, 0.35);
+  --gradient-3: rgba(120, 200, 190, 0.3);
+  --gradient-4: rgba(220, 140, 180, 0.35);
+  --gradient-5: rgba(130, 200, 220, 0.3);
+  --gradient-6: rgba(160, 180, 240, 0.35);
+  --gradient-7: rgba(180, 150, 200, 0.35);
 }
 
 .dark {
@@ -35,14 +35,14 @@
   --card: #18181b;
   --card-foreground: #fafafa;
 
-  /* Gradient blob colors - Dark mode (subtle and smooth) */
-  --gradient-1: rgba(139, 92, 246, 0.22);
-  --gradient-2: rgba(59, 130, 246, 0.18);
-  --gradient-3: rgba(20, 184, 166, 0.15);
-  --gradient-4: rgba(236, 72, 153, 0.18);
-  --gradient-5: rgba(34, 211, 238, 0.16);
-  --gradient-6: rgba(99, 102, 241, 0.20);
-  --gradient-7: rgba(168, 85, 247, 0.18);
+  /* Gradient blob colors - Dark mode (more vibrant to match dashboard) */
+  --gradient-1: rgba(139, 92, 246, 0.35);
+  --gradient-2: rgba(59, 130, 246, 0.3);
+  --gradient-3: rgba(20, 184, 166, 0.25);
+  --gradient-4: rgba(236, 72, 153, 0.3);
+  --gradient-5: rgba(34, 211, 238, 0.25);
+  --gradient-6: rgba(99, 102, 241, 0.3);
+  --gradient-7: rgba(168, 85, 247, 0.3);
 }
 
 @theme inline {
@@ -190,31 +190,37 @@ body {
 .glass-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .glass-card {
-  background: rgba(24, 24, 27, 0.8);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  background: rgba(15, 15, 20, 0.45);
+  backdrop-filter: blur(25px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px -6px rgba(0, 0, 0, 0.5);
 }
 
 /* ===== Button Styles ===== */
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   color: white;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+  filter: brightness(1.05);
 }
 
 .btn-primary:active {
@@ -309,6 +315,23 @@ body {
   /* Firefox */
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
+
 /* ===== Resume Preview Styles ===== */
 .a4-container {
   display: flex;
@@ -320,13 +343,19 @@ body {
 
 .a4-page {
   width: 210mm;
-  min-height: 297mm;
+  height: 297mm;
   background-color: white;
   color: black !important;
-  padding: 0.6in;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   line-height: 1.25;
+  overflow: hidden;
+  position: relative;
+}
+
+.resume-content-wrapper {
+  padding: 15.24mm;
+  width: 100%;
   position: relative;
   overflow: hidden;
   display: flex;

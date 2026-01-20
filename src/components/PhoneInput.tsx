@@ -7,9 +7,10 @@ interface PhoneInputProps {
     value: string;
     onChange: (fullNumber: string) => void;
     placeholder?: string;
+    error?: boolean;
 }
 
-export default function PhoneInput({ value, onChange, placeholder = "Enter phone number" }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, placeholder = "Enter phone number", error = false }: PhoneInputProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedCode, setSelectedCode] = useState("+91"); // Default to India
@@ -90,7 +91,7 @@ export default function PhoneInput({ value, onChange, placeholder = "Enter phone
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-background-secondary border border-border text-foreground text-sm hover:border-primary/50 transition-all min-w-[90px]"
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg bg-background-secondary border text-foreground text-sm hover:border-primary/50 transition-all min-w-[90px] ${error ? 'border-red-500 bg-red-500/5' : 'border-border'}`}
                 >
                     {currentCountry?.flag && <span className="text-lg">{currentCountry.flag}</span>}
                     <span className="font-medium">{selectedCode}</span>
@@ -141,7 +142,7 @@ export default function PhoneInput({ value, onChange, placeholder = "Enter phone
                 value={phoneNumber}
                 onChange={(e) => handleNumberChange(e.target.value)}
                 placeholder={placeholder}
-                className="flex-1 px-3 py-2 rounded-lg bg-background-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                className={`flex-1 px-3 py-2 rounded-lg bg-background-secondary border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all ${error ? 'border-red-500 bg-red-500/5' : 'border-border'}`}
             />
         </div>
     );

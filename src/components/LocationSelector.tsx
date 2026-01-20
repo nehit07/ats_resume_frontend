@@ -12,96 +12,10 @@ interface LocationSelectorProps {
     onCityChange: (value: string) => void;
     layout?: "horizontal" | "vertical";
     showLabels?: boolean;
+    showErrors?: boolean;
 }
 
-interface SearchableDropdownProps {
-    label: string;
-    placeholder: string;
-    value: string;
-    options: { label: string; value: string; isoCode?: string }[];
-    onChange: (value: string, isoCode?: string) => void;
-    disabled?: boolean;
-}
-
-const SearchableDropdown = ({
-    label,
-    placeholder,
-    value,
-    options,
-    onChange,
-    disabled = false,
-}: SearchableDropdownProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    const filteredOptions = options.filter((opt) =>
-        opt.label.toLowerCase().includes(search.toLowerCase())
-    );
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Update search when value changes externally
-    useEffect(() => {
-        if (value && !isOpen) {
-            setSearch(value);
-        }
-    }, [value, isOpen]);
-
-    return (
-        <div className="relative" ref={dropdownRef}>
-            <label className="block text-xs font-medium text-foreground-secondary mb-1">
-                {label}
-            </label>
-            <input
-                type="text"
-                placeholder={placeholder}
-                value={isOpen ? search : value || search}
-                onChange={(e) => {
-                    setSearch(e.target.value);
-                    if (!isOpen) setIsOpen(true);
-                }}
-                onFocus={() => {
-                    setIsOpen(true);
-                    setSearch("");
-                }}
-                disabled={disabled}
-                className="w-full px-3 py-2 rounded-lg bg-background-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            {isOpen && filteredOptions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 max-h-48 overflow-auto bg-background border border-border rounded-lg shadow-xl">
-                    {filteredOptions.slice(0, 100).map((opt) => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => {
-                                onChange(opt.label, opt.isoCode);
-                                setSearch(opt.label);
-                                setIsOpen(false);
-                            }}
-                            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors"
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-            {isOpen && filteredOptions.length === 0 && search && (
-                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-xl p-3">
-                    <p className="text-xs text-foreground-secondary text-center">No results found</p>
-                </div>
-            )}
-        </div>
-    );
-};
+import { SearchableDropdown } from "./SearchableDropdown";
 
 export default function LocationSelector({
     country,
@@ -112,6 +26,7 @@ export default function LocationSelector({
     onCityChange,
     layout = "horizontal",
     showLabels = true,
+    showErrors = false,
 }: LocationSelectorProps) {
     const [countryIso, setCountryIso] = useState<string>("");
     const [stateIso, setStateIso] = useState<string>("");
@@ -193,6 +108,7 @@ export default function LocationSelector({
                 value={country}
                 options={countryOptions}
                 onChange={handleCountryChange}
+                error={showErrors && !country}
             />
             <SearchableDropdown
                 label={showLabels ? "State/Province" : ""}
@@ -201,6 +117,7 @@ export default function LocationSelector({
                 options={stateOptions}
                 onChange={handleStateChange}
                 disabled={!countryIso}
+                error={showErrors && !state}
             />
             <SearchableDropdown
                 label={showLabels ? "City" : ""}
@@ -209,6 +126,7 @@ export default function LocationSelector({
                 options={cityOptions}
                 onChange={handleCityChange}
                 disabled={!stateIso}
+                error={showErrors && !city}
             />
         </div>
     );
