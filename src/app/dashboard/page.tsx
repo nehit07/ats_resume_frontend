@@ -1,184 +1,269 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ProfileButton } from "@/components/ProfileButton";
+
+interface ProfileStatus {
+    exists: boolean;
+    status: string;
+    version: number;
+    completeness: number;
+    last_updated: string;
+}
 
 export default function DashboardPage() {
-    const router = useRouter();
-    const { user, isAuthenticated, isLoading } = useAuth();
+    const { user, accessToken, isAuthenticated } = useAuth();
+    const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Redirect if not authenticated
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.replace("/login");
-        }
-    }, [isAuthenticated, isLoading, router]);
+        const fetchProfileStatus = async () => {
+            if (!accessToken) {
+                setIsLoading(false);
+                return;
+            }
 
-    // Simple direct navigation - Normalize page will handle empty state
-    const handleNormalizeClick = () => {
-        router.push("/profile/normalize");
-    };
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ingestion/profile-status/`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setProfileStatus(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch profile status:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (isAuthenticated) {
+            fetchProfileStatus();
+        }
+    }, [accessToken, isAuthenticated]);
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse text-foreground-secondary">Loading...</div>
+            <div className="flex-1 flex items-center justify-center bg-transparent">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-foreground-secondary uppercase tracking-widest animate-pulse">Initializing System...</span>
+                </div>
             </div>
         );
     }
 
-    if (!isAuthenticated || !user) {
-        return null; // Will redirect
-    }
+    const hasProfile = profileStatus?.exists || false;
 
-    return (
-        <div className="min-h-screen flex flex-col">
-            {/* Header */}
-            <header className="border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30">
-                <div className="mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center" style={{ maxWidth: '1400px' }}>
-                    <Link href="/" className="flex items-center gap-2 md:gap-3">
-                        <Image src="/logo.png" alt="Resumify" width={32} height={32} className="rounded-lg md:w-10 md:h-10" />
-                        <span className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Resumify</span>
-                    </Link>
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <ThemeToggle />
-                        <ProfileButton />
-                    </div>
+    // --- RENDER HELPERS ---
+    const renderEmptyState = () => (
+        <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
+            <div className="relative">
+                {/* Stylish Arrow Guide - Anchored to the card, pointing left */}
+                <div className="absolute -left-[160px] md:-left-[220px] top-1/2 -translate-y-1/2 hidden md:block pointer-events-none z-0">
+                    <svg width="250" height="150" viewBox="0 0 250 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-100 drop-shadow-[0_0_15px_rgba(139,92,246,0.6)] rotate-12">
+                        {/* Curved path pointing from button area towards sidebar */}
+                        <path d="M220 80 C 150 80, 100 80, 30 40" stroke="url(#arrow-gradient)" strokeWidth="3" strokeDasharray="8 6" strokeLinecap="round" className="animate-[dash_20s_linear_infinite]" />
+
+                        {/* Arrow head at the sidebar end */}
+                        <path d="M30 40 L 45 35 M 30 40 L 40 55" stroke="#8B5CF6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+                        {/* Glowing dots at the button end (start of arrow) */}
+                        <circle cx="220" cy="80" r="4" fill="#8B5CF6" className="animate-ping" />
+                        <circle cx="220" cy="80" r="2" fill="white" />
+
+                        <defs>
+                            <linearGradient id="arrow-gradient" x1="220" y1="80" x2="30" y2="40" gradientUnits="userSpaceOnUse">
+                                <stop stopColor="#8B5CF6" stopOpacity="0" />
+                                <stop offset="0.5" stopColor="#8B5CF6" />
+                                <stop offset="1" stopColor="#A78BFA" />
+                            </linearGradient>
+                        </defs>
+                        <text x="50" y="20" className="fill-primary text-xs font-bold uppercase tracking-widest opacity-80" style={{ textShadow: '0 0 10px rgba(139, 92, 246, 0.5)' }}>Start Here</text>
+                    </svg>
                 </div>
-            </header>
 
-            {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-[1400px] mx-auto">
-                    {/* Welcome Section */}
-                    <div className="mb-6">
-                        <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">
-                            Welcome back! 👋
-                        </h2>
-                        <p className="text-foreground-secondary">
-                            Manage your resumes and profile from here
+                <div className="max-w-3xl w-full text-center space-y-10 bg-white/[0.02] border border-white/5 p-12 rounded-[40px] backdrop-blur-3xl shadow-2xl relative overflow-hidden group z-10 transition-all hover:scale-[1.01] duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+                    {/* Real Logo Box */}
+                    <div className="relative inline-block mb-2">
+                        <div className="w-20 h-20 bg-background/50 border-2 border-primary/20 rounded-3xl flex items-center justify-center shadow-xl mx-auto backdrop-blur-md p-3 group-hover:rotate-6 transition-transform duration-500">
+                            <img src="/logo.png" alt="Resumify" className="w-full h-full object-contain" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 relative z-10">
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter leading-[0.95] bg-gradient-to-r from-primary via-indigo-400 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
+                            Start Your AI <br /> Professional Journey
+                        </h1>
+                        <p className="text-base text-foreground-secondary font-medium max-w-lg mx-auto leading-relaxed opacity-60">
+                            Create an optimized foundation for your career. <br />
+                            Unlock resume generation with one click.
                         </p>
                     </div>
 
-                    {/* Action Cards */}
-                    <h3 className="text-lg font-medium text-foreground mb-4">
-                        Quick Actions
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Resume Creation Card */}
-                        <div className="glass-card p-5 opacity-60">
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="p-2.5 bg-primary/10 rounded-lg">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-primary"
-                                    >
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                        <line x1="12" y1="18" x2="12" y2="12" />
-                                        <line x1="9" y1="15" x2="15" y2="15" />
-                                    </svg>
-                                </div>
-                                <span className="text-xs bg-foreground-secondary/20 text-foreground-secondary px-2 py-1 rounded-full">
-                                    Coming Soon
-                                </span>
-                            </div>
-                            <h4 className="font-medium text-foreground mb-1">
-                                Start Resume Creation
-                            </h4>
-                            <p className="text-sm text-foreground-secondary mb-3">
-                                Create ATS-optimized resumes with AI
-                            </p>
-                            <button disabled className="btn-primary w-full opacity-50 cursor-not-allowed">
-                                Create Resume
-                            </button>
-                        </div>
-
-                        {/* Profile Creation Card */}
-                        <div className="glass-card p-5">
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="p-2.5 bg-primary/10 rounded-lg">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-primary"
-                                    >
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                        <circle cx="9" cy="7" r="4" />
-                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <h4 className="font-medium text-foreground mb-1">
-                                Create Your Profile
-                            </h4>
-                            <p className="text-sm text-foreground-secondary mb-3">
-                                Build your profile for personalized resumes
-                            </p>
-                            <Link href="/profile/create" className="btn-primary w-full block text-center">
-                                Create Profile
-                            </Link>
-                        </div>
-
-                        {/* Normalize IDE Card */}
-                        <div className="glass-card p-5">
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="p-2.5 bg-green-500/10 rounded-lg">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-green-500"
-                                    >
-                                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                        <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <h4 className="font-medium text-foreground mb-1">
-                                Access Structured Data
-                            </h4>
-                            <p className="text-sm text-foreground-secondary mb-3">
-                                Normalize and merge your data with AI
-                            </p>
-                            <button
-                                onClick={handleNormalizeClick}
-                                className="btn-primary w-full bg-green-600 hover:bg-green-700"
-                            >
-                                Open
-                            </button>
-                        </div>
+                    <div className="flex flex-col items-center gap-6 relative z-10 pt-2">
+                        <Link
+                            href="/profile/create"
+                            className="btn-primary px-10 py-5 text-base font-bold shadow-2xl shadow-primary/20 hover:scale-105 transition-transform rounded-2xl animate-pulse ring-4 ring-primary/20 flex items-center gap-2 group/btn"
+                        >
+                            <span>Start from creating Professional Profile</span>
+                        </Link>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 
+
+    const renderActiveState = () => (
+        <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000 w-full max-w-3xl">
+            {/* Header */}
+            <div className="text-center mb-8">
+                <p className="text-sm font-bold text-primary uppercase tracking-widest mb-2 opacity-80">AI-Powered Optimization</p>
+                <h1 className="text-3xl md:text-4xl font-black tracking-tighter bg-gradient-to-r from-primary via-indigo-400 to-purple-500 bg-clip-text text-transparent">
+                    Career Command Center
+                </h1>
+            </div>
+
+            {/* Main Profile Card */}
+            <div className="w-full bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden group mb-6">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+                <div className="flex items-center gap-6 relative z-10">
+                    {/* Logo */}
+                    <div className="w-16 h-16 bg-background/50 border-2 border-primary/20 rounded-2xl flex items-center justify-center shadow-lg backdrop-blur-md p-3 shrink-0">
+                        <img src="/logo.png" alt="Resumify" className="w-full h-full object-contain" />
+                    </div>
+
+                    {/* Profile Info */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                            <h2 className="text-xl font-black text-foreground tracking-tight">Professional Profile</h2>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profileStatus?.status === 'approved'
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : 'bg-primary/20 text-primary border border-primary/30'
+                                }`}>
+                                {profileStatus?.status || 'Active'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-foreground-secondary opacity-60">
+                            Version {profileStatus?.version || 1} • Updated {profileStatus?.last_updated ? new Date(profileStatus.last_updated).toLocaleDateString() : 'recently'}
+                        </p>
+                    </div>
+
+                    {/* Completeness Badge */}
+                    <div className="text-center shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-indigo-500/20 border border-primary/30 flex items-center justify-center">
+                            <span className="text-xl font-black text-primary">{profileStatus?.completeness || 0}%</span>
+                        </div>
+                        <p className="text-[8px] font-bold uppercase tracking-wider text-foreground-secondary opacity-50 mt-1">Complete</p>
+                    </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mt-6 relative z-10">
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div
+                            className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                            style={{ width: `${profileStatus?.completeness || 0}%` }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Quick Actions Grid */}
+            <div className="w-full grid grid-cols-2 gap-4 mb-6">
+                <Link
+                    href="/profile/edit"
+                    className="group bg-white/[0.02] border border-white/5 p-5 rounded-2xl hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300 hover:scale-[1.02]"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg group-hover:bg-primary/20 transition-colors">
+                            ✏️
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm">Edit Profile</h3>
+                            <p className="text-[10px] text-foreground-secondary opacity-60">Update your details</p>
+                        </div>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/profile/edit?view=export"
+                    className="group bg-white/[0.02] border border-white/5 p-5 rounded-2xl hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300 hover:scale-[1.02]"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-lg group-hover:bg-indigo-500/20 transition-colors">
+                            ⚡
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm">Generate Resume</h3>
+                            <p className="text-[10px] text-foreground-secondary opacity-60">AI-powered export</p>
+                        </div>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/profile/edit?view=split"
+                    className="group bg-white/[0.02] border border-white/5 p-5 rounded-2xl hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300 hover:scale-[1.02]"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-lg group-hover:bg-purple-500/20 transition-colors">
+                            👁️
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm">Split Preview</h3>
+                            <p className="text-[10px] text-foreground-secondary opacity-60">Side-by-side view</p>
+                        </div>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/profile/create"
+                    className="group bg-white/[0.02] border border-white/5 p-5 rounded-2xl hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300 hover:scale-[1.02]"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-lg group-hover:bg-green-500/20 transition-colors">
+                            ➕
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm">New Profile</h3>
+                            <p className="text-[10px] text-foreground-secondary opacity-60">Start fresh</p>
+                        </div>
+                    </div>
+                </Link>
+            </div>
+
+            {/* Activity Footer */}
+            <div className="flex items-center justify-center gap-6 text-[10px] font-bold text-foreground-secondary opacity-40 uppercase tracking-widest">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span>Auto-Sync Active</span>
+                </div>
+                <span>•</span>
+                <span>Resumify</span>
+            </div>
+        </div>
+    );
+
+
+    return (
+        <div className="flex-1 h-screen flex flex-col p-8 lg:p-10 relative overflow-hidden bg-transparent">
+            {/* Background Glows (extreme subtle) */}
+            <div className="fixed inset-0 pointer-events-none -z-10 bg-transparent">
+                <div className="absolute top-[30%] left-[40%] w-[500px] h-[500px] bg-primary/5 blur-[80px] rounded-full animate-pulse" />
+            </div>
+
+            <div className="max-w-[1600px] mx-auto w-full h-full flex flex-col items-center justify-center animate-in fade-in duration-1000">
+                {hasProfile ? renderActiveState() : renderEmptyState()}
+            </div>
+        </div>
+    );
 }

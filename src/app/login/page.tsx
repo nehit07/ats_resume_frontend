@@ -20,7 +20,9 @@ export default function LoginPage() {
 
     // Redirect if already authenticated
     useEffect(() => {
-        if (!authLoading && isAuthenticated) {
+        // Double-check localStorage to avoid race condition after logout
+        const hasToken = localStorage.getItem('resumify_auth_token');
+        if (!authLoading && isAuthenticated && hasToken) {
             router.replace("/dashboard");
         }
     }, [isAuthenticated, authLoading, router]);

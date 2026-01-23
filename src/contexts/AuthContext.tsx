@@ -23,10 +23,12 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
     accessToken: string | null;
+    hasProfile: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     setAuthFromOAuth: (token: string, user: User) => void;
+    refreshProfileStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +44,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [hasProfile, setHasProfile] = useState<boolean>(false);
+
+    const refreshProfileStatus = useCallback(async (token?: string) => {
+        const activeToken = token || accessToken || inMemoryToken;
+        if (!activeToken) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/ingestion/profile-status/`, {
+                headers: { "Authorization": `Bearer ${activeToken}` },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setHasProfile(data.exists);
+            }
+        } catch (error) {
+            console.error("Failed to fetch profile status:", error);
+        }
+    }, [accessToken]);
 
     // Check for existing auth on mount
     useEffect(() => {
@@ -55,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     inMemoryToken = storedToken;
                     setAccessToken(storedToken);
                     setUser(JSON.parse(storedUser));
+                    refreshProfileStatus(storedToken); // Fetch profile status
                 } else {
                     // Fallback: Check sessionStorage for OAuth callback tokens
                     const tempToken = sessionStorage.getItem("temp_token");
@@ -65,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setAccessToken(tempToken);
                         const parsedUser = JSON.parse(tempUser);
                         setUser(parsedUser);
+                        refreshProfileStatus(tempToken);
 
                         // Persist to localStorage and clear temp storage
                         localStorage.setItem(AUTH_TOKEN_KEY, tempToken);
@@ -84,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         checkAuth();
-    }, []);
+    }, [refreshProfileStatus]);
 
     const login = useCallback(async (email: string, password: string) => {
         setIsLoading(true);
@@ -110,10 +132,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(data.user);
             localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
             localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+
+            // Refresh profile status after login
+            refreshProfileStatus(data.access_token);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [refreshProfileStatus]);
 
     const register = useCallback(async (email: string, password: string) => {
         setIsLoading(true);
@@ -139,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(data.user);
             localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
             localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+            setHasProfile(false); // New user won't have a profile
         } finally {
             setIsLoading(false);
         }
@@ -162,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             inMemoryToken = null;
             setAccessToken(null);
             setUser(null);
+            setHasProfile(false);
             localStorage.removeItem(AUTH_TOKEN_KEY);
             localStorage.removeItem(AUTH_USER_KEY);
         }
@@ -173,7 +200,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
         localStorage.setItem(AUTH_TOKEN_KEY, token);
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
-    }, []);
+        refreshProfileStatus(token);
+    }, [refreshProfileStatus]);
 
     return (
         <AuthContext.Provider
@@ -182,10 +210,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isAuthenticated: !!user,
                 isLoading,
                 accessToken,
+                hasProfile,
                 login,
                 register,
                 logout,
                 setAuthFromOAuth,
+                refreshProfileStatus,
             }}
         >
             {children}

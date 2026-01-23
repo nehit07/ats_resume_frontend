@@ -12,12 +12,12 @@
   --card-foreground: #1e293b;
 
   /* Primary colors */
-  --primary: #6366f1;
+  --primary: #8b5cf6;
   --primary-foreground: #ffffff;
 
-  /* Gradient blob colors - Light mode (more visible, soft pastel tones) */
-  --gradient-1: rgba(180, 160, 220, 0.4);
-  --gradient-2: rgba(140, 160, 230, 0.35);
+  /* Gradient blob colors */
+  --gradient-1: rgba(139, 92, 246, 0.2);
+  --gradient-2: rgba(167, 139, 250, 0.15);
   --gradient-3: rgba(120, 200, 190, 0.3);
   --gradient-4: rgba(220, 140, 180, 0.35);
   --gradient-5: rgba(130, 200, 220, 0.3);
@@ -26,19 +26,22 @@
 }
 
 .dark {
-  /* Dark mode */
-  --background: #0a0a0f;
-  --background-secondary: #18181b;
-  --foreground: #fafafa;
-  --foreground-secondary: #a1a1aa;
-  --border: #27272a;
-  --card: #18181b;
-  --card-foreground: #fafafa;
+  /* Dark mode - THE ORIGINAL THEME */
+  --background: #020617;
+  --background-secondary: #0f172a;
+  --foreground: #f8fafc;
+  --foreground-secondary: #94a3b8;
+  --border: rgba(255, 255, 255, 0.05);
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
 
-  /* Gradient blob colors - Dark mode (more vibrant to match dashboard) */
-  --gradient-1: rgba(139, 92, 246, 0.35);
-  --gradient-2: rgba(59, 130, 246, 0.3);
-  --gradient-3: rgba(20, 184, 166, 0.25);
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+
+  /* Gradient blob colors - Deep Purple Glows */
+  --gradient-1: rgba(139, 92, 246, 0.25);
+  --gradient-2: rgba(79, 70, 229, 0.2);
+  --gradient-3: rgba(167, 139, 250, 0.15);
   --gradient-4: rgba(236, 72, 153, 0.3);
   --gradient-5: rgba(34, 211, 238, 0.25);
   --gradient-6: rgba(99, 102, 241, 0.3);
@@ -55,15 +58,15 @@
   --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 /* ===== Base Styles ===== */
 body {
-  background: var(--background);
+  background: transparent;
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
   width: 100%;
@@ -330,6 +333,26 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.4);
+}
+
+/* ===== Smooth Sidebar Animation ===== */
+.sidebar-animate {
+  will-change: width;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0); /* GPU acceleration */
+  backface-visibility: hidden;
+}
+
+.sidebar-content-animate {
+  will-change: opacity, transform, width;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-icon-rotate {
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ===== Resume Preview Styles ===== */

@@ -300,8 +300,8 @@ export default function ATSResumePreview({
             blocks.push({ id: 'contact', type: 'contact', data: contact, showHeader: false });
         }
         if (summary) {
-            const text = typeof summary === 'string' ? summary : (summary as any)?.text || (summary as any)?.summary;
-            if (text && text.trim()) {
+            const text = typeof summary === 'string' ? summary : (summary as any)?.text || (summary as any)?.summary || (summary as any)?.content || '';
+            if (text && typeof text === 'string' && text.trim()) {
                 blocks.push({ id: 'summary', type: 'summary', data: summary, showHeader: false });
             }
         }

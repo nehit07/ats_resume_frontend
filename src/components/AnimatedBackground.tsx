@@ -94,7 +94,7 @@ export function AnimatedBackground() {
     const getOffset = (pos: number, multiplier: number) => (pos - 50) * multiplier;
 
     return (
-        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-background transition-colors duration-500">
             {/* Blob 1 - Purple, top-left, follows fastest */}
             <div
                 className="gradient-blob gradient-blob-1"
