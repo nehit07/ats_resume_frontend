@@ -34,7 +34,7 @@ function WorkspaceContent() {
     const { isAuthenticated, isLoading, accessToken } = useAuth();
 
     // View state
-    const view = searchParams.get("view") || "edit"; // "edit" or "split"
+    const view = searchParams.get("view") || "edit";
 
     // State
     const [activeSection, setActiveSection] = useState<SectionKey>("contact");
@@ -318,7 +318,7 @@ function WorkspaceContent() {
                 </aside>
 
                 {/* Center: Editor Panel */}
-                <main className={`flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 ${view === 'split' ? 'p-6' : 'p-12'}`}>
+                <main className="flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 p-12">
                     {isDataLoading && (
                         <div className="absolute inset-0 bg-background/80 backdrop-blur-md z-[60] flex items-center justify-center">
                             <div className="flex flex-col items-center gap-4">
@@ -328,13 +328,13 @@ function WorkspaceContent() {
                         </div>
                     )}
 
-                    <div className={`${view === 'split' ? 'w-full' : 'max-w-7xl mx-auto'} space-y-10`}>
+                    <div className="max-w-7xl mx-auto space-y-10">
                         <div className="flex items-center gap-4">
                             <span className="text-4xl">{SECTIONS.find(s => s.key === activeSection)?.icon}</span>
                             <h2 className="text-5xl font-black tracking-tighter capitalize">{activeSection.replace(/_/g, " ")}</h2>
                         </div>
 
-                        <div className={`glass-card p-10 min-h-[600px] border-primary/10 shadow-2xl relative transition-all ${view === 'split' ? 'bg-black/20' : ''}`}>
+                        <div className="glass-card p-10 min-h-[600px] border-primary/10 shadow-2xl relative transition-all">
                             <div className="absolute -top-3 -left-3 px-4 py-1.5 bg-primary/20 backdrop-blur-md border border-primary/20 rounded-lg text-[10px] font-black text-primary shadow-xl tracking-[0.2em] uppercase">
                                 AI Profile Editor
                             </div>

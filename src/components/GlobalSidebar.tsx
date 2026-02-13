@@ -17,8 +17,7 @@ const NAV_ITEMS: SidebarItem[] = [
     { id: "overview", label: "Overview", icon: "🏠", path: "/dashboard" },
     { id: "create", label: "Create Profile", icon: "✨", path: "/profile/create" },
     { id: "edit", label: "Edit Profile", icon: "👤", path: "/profile/edit" },
-    { id: "preview", label: "Split Preview", icon: "🌗", path: "/profile/edit?view=split" },
-    { id: "export", label: "Export", icon: "📥", path: "/profile/edit?view=export" },
+    { id: "export", label: "Export", icon: "📥", path: "/profile/export" },
 ];
 
 export function GlobalSidebar({ children }: { children: React.ReactNode }) {
