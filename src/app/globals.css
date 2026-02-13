@@ -193,6 +193,53 @@ body {
   }
 }
 
+/* ===== Dashboard Animations ===== */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes borderGlow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
 /* ===== Glass Card Effect ===== */
 .glass-card {
   background: rgba(255, 255, 255, 0.35);
@@ -293,6 +340,19 @@ body {
   cursor: pointer;
 }
 
+/* ===== Custom Admin Select ===== */
+select.input-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
+
 /* ===== Theme Toggle Button ===== */
 .theme-toggle {
   padding: 8px;
@@ -344,15 +404,16 @@ body {
 .sidebar-animate {
   will-change: width;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateZ(0); /* GPU acceleration */
+  transform: translateZ(0);
+  /* GPU acceleration */
   backface-visibility: hidden;
 }
 
 .sidebar-content-animate {
   will-change: opacity, transform, width;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-icon-rotate {

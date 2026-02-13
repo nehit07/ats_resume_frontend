@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeToggle } from "../ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarItem {
@@ -13,33 +13,34 @@ interface SidebarItem {
     path: string;
 }
 
-const NAV_ITEMS: SidebarItem[] = [
-    { id: "overview", label: "Overview", icon: "🏠", path: "/dashboard" },
-    { id: "create", label: "Create Profile", icon: "✨", path: "/profile/create" },
-    { id: "edit", label: "Edit Profile", icon: "👤", path: "/profile/edit" },
-    { id: "export", label: "Export", icon: "📥", path: "/profile/export" },
+const ADMIN_NAV_ITEMS: SidebarItem[] = [
+    { id: "dashboard", label: "Dashboard", icon: "📊", path: "/admin" },
+    { id: "users", label: "Users", icon: "👥", path: "/admin/users" },
+    { id: "resumes", label: "Resumes", icon: "📄", path: "/admin/resumes" },
+    { id: "linkedin", label: "LinkedIn", icon: "💼", path: "/admin/linkedin" },
+    { id: "profiles", label: "Profiles", icon: "🧑‍💻", path: "/admin/profiles" },
+    { id: "jobs", label: "Processing Jobs", icon: "⚙️", path: "/admin/jobs" },
+    { id: "sessions", label: "Sessions", icon: "🔑", path: "/admin/sessions" },
 ];
 
-export function GlobalSidebar({ children }: { children: React.ReactNode }) {
+export function AdminSidebar({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const { user, logout, hasProfile, isAdmin } = useAuth();
+    const { user, logout } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
     const handleLogout = async () => {
         await logout();
-        localStorage.removeItem('resumify_auth_token');
-        localStorage.removeItem('resumify_auth_user');
-        sessionStorage.removeItem('temp_token');
-        sessionStorage.removeItem('temp_user');
-        window.location.href = '/login';
+        localStorage.removeItem("resumify_auth_token");
+        localStorage.removeItem("resumify_auth_user");
+        sessionStorage.removeItem("temp_token");
+        sessionStorage.removeItem("temp_user");
+        window.location.href = "/login";
     };
 
     useEffect(() => {
-        // Restore state from local storage on mount
-        const savedState = localStorage.getItem("resumify_sidebar_collapsed");
+        const savedState = localStorage.getItem("resumify_admin_sidebar_collapsed");
         if (savedState === "true") {
             setIsCollapsed(true);
         }
@@ -49,18 +50,14 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
     const toggleSidebar = () => {
         const newState = !isCollapsed;
         setIsCollapsed(newState);
-        localStorage.setItem("resumify_sidebar_collapsed", String(newState));
+        localStorage.setItem("resumify_admin_sidebar_collapsed", String(newState));
     };
 
     if (!isMounted) return null;
 
     const isItemActive = (item: SidebarItem) => {
-        if (item.path.includes('?')) {
-            const [basePath, query] = item.path.split('?');
-            const [key, value] = query.split('=');
-            return pathname === basePath && searchParams?.get(key) === value;
-        }
-        return pathname === item.path;
+        if (item.path === "/admin") return pathname === "/admin";
+        return pathname.startsWith(item.path);
     };
 
     return (
@@ -70,7 +67,7 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                 className={`sidebar-animate flex flex-col border-r border-white/5 bg-background/40 backdrop-blur-3xl z-50 relative group/sidebar ${isCollapsed ? "w-20" : "w-72"
                     }`}
             >
-                {/* Collapse Toggle - Stylish Chevron */}
+                {/* Collapse Toggle */}
                 <button
                     onClick={toggleSidebar}
                     className="absolute -right-3 top-10 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white shadow-[0_0_15px_rgba(139,92,246,0.4)] hover:scale-110 active:scale-95 transition-all z-[60] border border-white/10"
@@ -98,33 +95,29 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                         <span className="text-2xl font-black tracking-tight leading-none bg-gradient-to-r from-primary via-purple-400 to-indigo-500 bg-clip-text text-transparent uppercase whitespace-nowrap drop-shadow-sm">
                             Resumify
                         </span>
-                        <span className="text-[9px] font-bold text-foreground-secondary/60 uppercase tracking-[0.25em] mt-0.5">
-                            AI Resume Builder
+                        <span className="text-[9px] font-bold text-red-400/80 uppercase tracking-[0.25em] mt-0.5">
+                            Admin Panel
                         </span>
                     </div>
                 </div>
 
-                {/* Primary Navigation */}
+                {/* Navigation */}
                 <nav className="flex-1 px-3 space-y-2 overflow-y-auto no-scrollbar py-4">
-                    {NAV_ITEMS.map((item) => {
+                    {ADMIN_NAV_ITEMS.map((item) => {
                         const isActive = isItemActive(item);
-                        const isDisabled = !hasProfile && item.id !== 'overview' && item.id !== 'create';
 
                         return (
                             <Link
                                 key={item.id}
-                                href={isDisabled ? "#" : item.path}
-                                onClick={(e) => isDisabled && e.preventDefault()}
+                                href={item.path}
                                 aria-label={isCollapsed ? item.label : undefined}
                                 className={`
                                     relative flex items-center h-12 rounded-xl transition-all duration-300 group/item overflow-hidden
-                                    ${isDisabled
-                                        ? "opacity-30 cursor-not-allowed grayscale"
-                                        : isCollapsed
-                                            ? "text-foreground-secondary hover:text-foreground"
-                                            : isActive
-                                                ? "bg-primary text-white shadow-lg shadow-primary/25"
-                                                : "hover:bg-white/5 text-foreground-secondary hover:text-foreground"
+                                    ${isCollapsed
+                                        ? "text-foreground-secondary hover:text-foreground"
+                                        : isActive
+                                            ? "bg-primary text-white shadow-lg shadow-primary/25"
+                                            : "hover:bg-white/5 text-foreground-secondary hover:text-foreground"
                                     }
                                     ${isCollapsed ? "justify-center px-0" : "px-4 gap-3"}
                                 `}
@@ -149,9 +142,7 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                                         ${isCollapsed
                                             ? isActive
                                                 ? "bg-primary/15 border-primary/30 shadow-[0_0_18px_rgba(139,92,246,0.20)]"
-                                                : isDisabled
-                                                    ? ""
-                                                    : "group-hover/item:bg-primary/10 group-hover/item:border-primary/20"
+                                                : "group-hover/item:bg-primary/10 group-hover/item:border-primary/20"
                                             : ""
                                         }
                                     `}
@@ -161,7 +152,7 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                                     </span>
                                 </span>
 
-                                {/* Label (Transitions opacity/width instead of unmounting) */}
+                                {/* Label */}
                                 <span className={`
                                     sidebar-content-animate font-bold tracking-tight text-sm whitespace-nowrap
                                     ${isCollapsed
@@ -172,60 +163,50 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                                     {item.label}
                                 </span>
 
-                                {/* Lock Icon */}
-                                {isDisabled && !isCollapsed && (
-                                    <span className="text-[10px] ml-auto opacity-50">🔒</span>
-                                )}
-
-                                {/* Hover Tooltip for Collapsed State */}
+                                {/* Tooltip for collapsed */}
                                 {isCollapsed && (
                                     <div className="absolute left-14 top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-background/90 backdrop-blur-md border border-white/10 rounded-lg text-xs font-bold text-foreground opacity-0 group-hover/item:opacity-100 translate-x-2 group-hover/item:translate-x-0 transition-all duration-200 pointer-events-none z-[100] shadow-xl whitespace-nowrap">
-                                        {isDisabled ? `${item.label} (Locked)` : item.label}
+                                        {item.label}
                                     </div>
                                 )}
                             </Link>
                         );
                     })}
 
-                    {/* Admin Panel Link - Only visible to staff users */}
-                    {isAdmin && (
-                        <>
-                            <div className="h-px bg-white/5 my-3" />
-                            <Link
-                                href="/admin"
-                                aria-label={isCollapsed ? "Admin Panel" : undefined}
-                                className={`
-                                    relative flex items-center h-12 rounded-xl transition-all duration-300 group/item overflow-hidden
-                                    text-red-400/80 hover:text-red-300 hover:bg-red-500/5
-                                    ${isCollapsed ? "justify-center px-0" : "px-4 gap-3"}
-                                `}
-                            >
-                                <span className={`
-                                    shrink-0 flex items-center justify-center rounded-xl border sidebar-content-animate
-                                    ${isCollapsed ? "w-11 h-11 border-red-500/10 bg-red-500/[0.03] group-hover/item:bg-red-500/10 group-hover/item:border-red-500/20" : "w-auto h-auto border-transparent bg-transparent"}
-                                `}>
-                                    <span className="text-xl transition-transform duration-200 group-hover/item:scale-110">🛡️</span>
-                                </span>
-                                <span className={`sidebar-content-animate font-bold tracking-tight text-sm whitespace-nowrap ${isCollapsed ? "w-0 opacity-0 translate-x-4" : "w-auto opacity-100 translate-x-0"}`}>
-                                    Admin Panel
-                                </span>
-                                {isCollapsed && (
-                                    <div className="absolute left-14 top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-background/90 backdrop-blur-md border border-white/10 rounded-lg text-xs font-bold text-red-400 opacity-0 group-hover/item:opacity-100 translate-x-2 group-hover/item:translate-x-0 transition-all duration-200 pointer-events-none z-[100] shadow-xl whitespace-nowrap">
-                                        Admin Panel
-                                    </div>
-                                )}
-                            </Link>
-                        </>
-                    )}
+                    {/* Divider */}
+                    <div className="h-px bg-white/5 my-3" />
+
+                    {/* Back to App link */}
+                    <Link
+                        href="/dashboard"
+                        className={`
+                            relative flex items-center h-12 rounded-xl transition-all duration-300 group/item overflow-hidden
+                            text-foreground-secondary hover:text-foreground hover:bg-white/5
+                            ${isCollapsed ? "justify-center px-0" : "px-4 gap-3"}
+                        `}
+                    >
+                        <span className={`
+                            shrink-0 flex items-center justify-center rounded-xl border sidebar-content-animate
+                            ${isCollapsed ? "w-11 h-11 border-white/5 bg-white/[0.02] group-hover/item:bg-primary/10 group-hover/item:border-primary/20" : "w-auto h-auto border-transparent bg-transparent"}
+                        `}>
+                            <span className="text-xl transition-transform duration-200 group-hover/item:scale-110">🏠</span>
+                        </span>
+                        <span className={`sidebar-content-animate font-bold tracking-tight text-sm whitespace-nowrap ${isCollapsed ? "w-0 opacity-0 translate-x-4" : "w-auto opacity-100 translate-x-0"}`}>
+                            Back to App
+                        </span>
+                        {isCollapsed && (
+                            <div className="absolute left-14 top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-background/90 backdrop-blur-md border border-white/10 rounded-lg text-xs font-bold text-foreground opacity-0 group-hover/item:opacity-100 translate-x-2 group-hover/item:translate-x-0 transition-all duration-200 pointer-events-none z-[100] shadow-xl whitespace-nowrap">
+                                Back to App
+                            </div>
+                        )}
+                    </Link>
                 </nav>
 
                 {/* Bottom Section */}
                 <div className="p-4 space-y-3 border-t border-white/5 bg-white/[0.01]">
-
-                    {/* Appearance Toggle - Medium priority */}
+                    {/* Theme Toggle */}
                     <div className={`flex items-center transition-all duration-300 ${isCollapsed ? "justify-center" : "justify-between px-2"}`}>
-                        <span className={`text-[10px] font-black uppercase tracking-widest text-foreground-secondary opacity-40 whitespace-nowrap transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-40"
-                            }`}>
+                        <span className={`text-[10px] font-black uppercase tracking-widest text-foreground-secondary opacity-40 whitespace-nowrap transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-40"}`}>
                             Appearance
                         </span>
                         <div className={`relative ${isCollapsed ? "scale-100" : "scale-90"} origin-right group/themeTooltip`}>
@@ -240,65 +221,42 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                         </div>
                     </div>
 
-                    {/* Profile Card - Highest priority (largest in collapsed mode) */}
-                    <div className={`
-                        flex items-center rounded-xl transition-all duration-300 relative group/profileTooltip
-                        ${isCollapsed
-                            ? "justify-center p-0 bg-transparent border-0"
-                            : "p-3 bg-white/5 border border-white/5 gap-3 hover:bg-white/[0.08] hover:border-white/10"
-                        }
-                    `}>
-                        {/* Avatar - Larger in collapsed mode to show priority */}
-                        <div className={`
-                            ${isCollapsed ? "w-11 h-11" : "w-9 h-9"} 
-                            rounded-full bg-gradient-to-br from-primary via-purple-500 to-indigo-600 
-                            flex items-center justify-center text-white font-black shrink-0
-                            ${isCollapsed ? "text-sm shadow-lg shadow-primary/30 ring-2 ring-primary/20" : "text-[11px] shadow-md"}
-                            transition-all duration-300
-                        `}>
+                    {/* Admin Profile */}
+                    <div className={`flex items-center rounded-xl transition-all duration-300 relative group/profileTooltip ${isCollapsed ? "justify-center p-0" : "p-3 bg-white/5 border border-white/5 gap-3 hover:bg-white/[0.08] hover:border-white/10"}`}>
+                        <div className={`${isCollapsed ? "w-11 h-11" : "w-9 h-9"} rounded-full bg-gradient-to-br from-red-500 via-orange-500 to-amber-500 flex items-center justify-center text-white font-black shrink-0 ${isCollapsed ? "text-sm shadow-lg shadow-red-500/30 ring-2 ring-red-500/20" : "text-[11px] shadow-md"} transition-all duration-300`}>
                             {user?.avatar_url ? (
-                                <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                                <img src={user.avatar_url} alt="Admin" className="w-full h-full object-cover rounded-full" />
                             ) : (
-                                user?.email?.charAt(0).toUpperCase() || "U"
+                                user?.email?.charAt(0).toUpperCase() || "A"
                             )}
                         </div>
-
                         <div className={`flex flex-col min-w-0 transition-opacity duration-300 ${isCollapsed ? "hidden" : "block"}`}>
-                            <span className="text-sm font-bold truncate text-foreground">{user?.email?.split('@')[0]}</span>
-                            <span className="text-[9px] font-black text-primary uppercase tracking-wider">Pro Plan</span>
+                            <span className="text-sm font-bold truncate text-foreground">{user?.email?.split("@")[0]}</span>
+                            <span className="text-[9px] font-black text-red-400 uppercase tracking-wider">Admin</span>
                         </div>
-
                         {isCollapsed && (
                             <div className="absolute left-14 top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-background/90 backdrop-blur-md border border-white/10 rounded-lg text-xs font-bold text-foreground opacity-0 group-hover/profileTooltip:opacity-100 translate-x-2 group-hover/profileTooltip:translate-x-0 transition-all duration-200 pointer-events-none z-[100] shadow-xl whitespace-nowrap">
-                                {user?.email ? `Signed in as ${user.email}` : "Account"}
+                                {user?.email ? `Admin: ${user.email}` : "Admin"}
                             </div>
                         )}
                     </div>
 
-                    {/* Logout Button - Lowest priority (smaller, danger color) */}
+                    {/* Sign Out */}
                     <div className="relative group/logoutTooltip">
                         <button
                             onClick={handleLogout}
-                            className={`
-                                w-full flex items-center justify-center rounded-lg text-red-400 hover:text-red-300 transition-all duration-300
-                                ${isCollapsed
-                                    ? "h-8 w-8 mx-auto bg-red-500/5 hover:bg-red-500/15"
-                                    : "h-9 gap-2 bg-red-500/5 hover:bg-red-500/15"
-                                }
-                            `}
+                            className={`w-full flex items-center justify-center rounded-lg text-red-400 hover:text-red-300 transition-all duration-300 ${isCollapsed ? "h-8 w-8 mx-auto bg-red-500/5 hover:bg-red-500/15" : "h-9 gap-2 bg-red-500/5 hover:bg-red-500/15"}`}
                             aria-label={isCollapsed ? "Logout" : undefined}
                         >
                             <svg width={isCollapsed ? "14" : "15"} height={isCollapsed ? "14" : "15"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
                             </svg>
-                            <span className={`font-bold text-[10px] uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
-                                }`}>
+                            <span className={`font-bold text-[10px] uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}>
                                 Sign Out
                             </span>
                         </button>
-
                         {isCollapsed && (
                             <div className="absolute left-14 top-1/2 -translate-y-1/2 ml-2 px-3 py-1.5 bg-background/90 backdrop-blur-md border border-white/10 rounded-lg text-xs font-bold text-red-400 opacity-0 group-hover/logoutTooltip:opacity-100 translate-x-2 group-hover/logoutTooltip:translate-x-0 transition-all duration-200 pointer-events-none z-[100] shadow-xl whitespace-nowrap">
                                 Sign Out

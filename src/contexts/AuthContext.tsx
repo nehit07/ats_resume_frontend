@@ -16,6 +16,7 @@ interface User {
     email: string;
     auth_provider: string;
     avatar_url?: string | null;
+    is_staff?: boolean;
 }
 
 interface AuthContextType {
@@ -24,6 +25,7 @@ interface AuthContextType {
     isLoading: boolean;
     accessToken: string | null;
     hasProfile: boolean;
+    isAdmin: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -211,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoading,
                 accessToken,
                 hasProfile,
+                isAdmin: !!user?.is_staff,
                 login,
                 register,
                 logout,
