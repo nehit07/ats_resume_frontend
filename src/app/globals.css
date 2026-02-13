@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* ===== CSS Variables for Theming ===== */
 :root {
   /* Light mode (default) - Softer, soothing palette */

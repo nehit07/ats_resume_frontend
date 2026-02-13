@@ -286,6 +286,397 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ABOUT SECTION */}
+        <section id="about" className="py-24 border-t border-foreground/5 px-4 overflow-hidden relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                About{" "}
+                <span className="bg-gradient-to-r from-primary via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Resumify
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-secondary/40 max-w-2xl mx-auto leading-relaxed">
+                We believe your skills deserve to be seen — not filtered out by a machine.
+                Resumify was born from a simple frustration: talented people getting rejected
+                by ATS bots before a human ever reads their resume.
+              </p>
+            </div>
+
+            {/* Mission Card */}
+            <div className="glass-card p-10 md:p-14 mb-8 bg-gradient-to-br from-primary/5 via-transparent to-indigo-500/5 border-primary/10 shadow-xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 opacity-5">
+                <Icons.bot className="w-56 h-56 rotate-12" />
+              </div>
+              <div className="relative z-10 space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                  <Icons.zap className="w-3 h-3" />
+                  Our Mission
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold leading-snug">
+                  Bridge the gap between talent and opportunity through intelligent resume optimization.
+                </h3>
+                <p className="text-sm text-foreground-secondary/50 font-medium leading-relaxed">
+                  Resumify uses advanced AI to extract, clean, and restructure your professional
+                  data from multiple sources — LinkedIn profiles and existing resumes — into a
+                  single, polished, ATS-optimized document that gets you past screening bots and
+                  into the interview room.
+                </p>
+              </div>
+            </div>
+
+            {/* Tech Pillars */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: Icons.bot,
+                  title: "AI Extraction Engine",
+                  desc: "Powered by state-of-the-art LLMs that understand context, not just keywords. Your experience is interpreted, not just copied.",
+                  color: "text-primary",
+                  bg: "bg-primary/10 border-primary/20",
+                },
+                {
+                  icon: Icons.merge,
+                  title: "Multi-Source Merging",
+                  desc: "We fuse data from your uploaded resume and LinkedIn profile into one rich, deduplicated professional profile.",
+                  color: "text-indigo-400",
+                  bg: "bg-indigo-400/10 border-indigo-400/20",
+                },
+                {
+                  icon: Icons.shield,
+                  title: "ATS Optimization",
+                  desc: "Every output is structured, formatted, and phrased to sail through Applicant Tracking Systems used by top companies.",
+                  color: "text-emerald-400",
+                  bg: "bg-emerald-400/10 border-emerald-400/20",
+                },
+              ].map((pillar) => (
+                <div
+                  key={pillar.title}
+                  className="glass-card p-8 flex flex-col gap-4 hover:translate-y-[-4px] transition-all duration-300 shadow-xl"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-2xl ${pillar.bg} border flex items-center justify-center`}
+                  >
+                    <pillar.icon className={`w-6 h-6 ${pillar.color}`} />
+                  </div>
+                  <h3 className="text-base font-bold">{pillar.title}</h3>
+                  <p className="text-xs text-foreground-secondary/50 font-medium leading-relaxed">
+                    {pillar.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Built By */}
+            <div className="text-center mt-12 space-y-2">
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground-secondary/30">
+                Built with passion for the modern job seeker
+              </p>
+              <p className="text-xs text-foreground-secondary/20 font-medium">
+                Designed &amp; Developed as an AI-Powered Product
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* PRIVACY POLICY SECTION */}
+        <section id="privacy" className="py-24 border-t border-foreground/5 px-4 overflow-hidden relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                Privacy{" "}
+                <span className="bg-gradient-to-r from-primary via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Policy
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-secondary/40 max-w-2xl mx-auto leading-relaxed">
+                Your privacy matters to us. Here&apos;s how we handle your data with care and transparency.
+              </p>
+            </div>
+
+            {/* Commitment Card */}
+            <div className="glass-card p-10 md:p-14 mb-8 bg-gradient-to-br from-emerald-500/5 via-transparent to-primary/5 border-emerald-500/10 shadow-xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 opacity-5">
+                <Icons.shield className="w-56 h-56 rotate-12" />
+              </div>
+              <div className="relative z-10 space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                  <Icons.shield className="w-3 h-3" />
+                  Our Commitment
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold leading-snug">
+                  We never sell, share, or misuse your personal data. Period.
+                </h3>
+                <p className="text-sm text-foreground-secondary/50 font-medium leading-relaxed">
+                  Resumify is built with a privacy-first approach. Your resumes, LinkedIn data,
+                  and personal information are used solely to generate your optimized profile —
+                  nothing more.
+                </p>
+              </div>
+            </div>
+
+            {/* Policy Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  title: "Data We Collect",
+                  items: [
+                    "Account information (name, email) for authentication",
+                    "Uploaded resumes and LinkedIn profile data for AI processing",
+                    "Usage analytics to improve our service quality",
+                  ],
+                },
+                {
+                  title: "How We Use It",
+                  items: [
+                    "Generate and optimize your ATS-friendly resume",
+                    "Merge data from multiple sources into a unified profile",
+                    "Improve our AI models and user experience",
+                  ],
+                },
+                {
+                  title: "Data Security",
+                  items: [
+                    "Industry-standard encryption for data in transit and at rest",
+                    "Secure authentication with JWT tokens",
+                    "Regular security audits and best practices",
+                  ],
+                },
+                {
+                  title: "Your Rights",
+                  items: [
+                    "Download or delete your data at any time from your dashboard",
+                    "Opt out of analytics and non-essential data collection",
+                    "Request a full copy of all data we store about you",
+                  ],
+                },
+              ].map((block) => (
+                <div
+                  key={block.title}
+                  className="glass-card p-8 flex flex-col gap-4 hover:translate-y-[-4px] transition-all duration-300 shadow-xl"
+                >
+                  <h3 className="text-base font-bold">{block.title}</h3>
+                  <ul className="space-y-3">
+                    {block.items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-xs text-foreground-secondary/50 font-medium leading-relaxed">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <Icons.check className="w-3 h-3 text-emerald-400" />
+                        </div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            {/* Last Updated */}
+            <div className="text-center mt-12 space-y-2">
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground-secondary/30">
+                Last updated: February 2026
+              </p>
+              <p className="text-xs text-foreground-secondary/20 font-medium">
+                Questions? Reach out at privacy@resumify.ai
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* TERMS OF SERVICE SECTION */}
+        <section id="terms" className="py-24 border-t border-foreground/5 px-4 overflow-hidden relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                Terms of{" "}
+                <span className="bg-gradient-to-r from-primary via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Service
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-secondary/40 max-w-2xl mx-auto leading-relaxed">
+                By using Resumify, you agree to the following terms. We&apos;ve kept them simple and fair.
+              </p>
+            </div>
+
+            {/* Overview Card */}
+            <div className="glass-card p-10 md:p-14 mb-8 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 border-indigo-500/10 shadow-xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 opacity-5">
+                <Icons.layers className="w-56 h-56 rotate-12" />
+              </div>
+              <div className="relative z-10 space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest">
+                  <Icons.layers className="w-3 h-3" />
+                  Agreement Overview
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold leading-snug">
+                  Fair terms that respect both your rights and our service.
+                </h3>
+                <p className="text-sm text-foreground-secondary/50 font-medium leading-relaxed">
+                  These terms govern your use of Resumify&apos;s platform, including AI-powered resume
+                  generation, data processing, and account management. We believe in transparency
+                  and keeping legal language understandable.
+                </p>
+              </div>
+            </div>
+
+            {/* Terms Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  title: "Service Usage",
+                  items: [
+                    "Resumify is provided for personal, professional resume building purposes",
+                    "You must provide accurate information when creating your account",
+                    "Automated scraping or bulk misuse of the service is prohibited",
+                  ],
+                },
+                {
+                  title: "Intellectual Property",
+                  items: [
+                    "You retain full ownership of all content you upload to Resumify",
+                    "AI-generated resume outputs are yours to use freely and without restriction",
+                    "The Resumify platform, branding, and AI models remain our property",
+                  ],
+                },
+                {
+                  title: "Account Responsibilities",
+                  items: [
+                    "You are responsible for maintaining the security of your account credentials",
+                    "You must be at least 16 years old to create an account and use our services",
+                    "We reserve the right to suspend accounts that violate these terms",
+                  ],
+                },
+                {
+                  title: "Limitation of Liability",
+                  items: [
+                    "Resumify is provided \"as is\" — we do not guarantee job placement outcomes",
+                    "We are not liable for decisions made by employers based on your resume",
+                    "Service availability may vary; we strive for maximum uptime but cannot guarantee it",
+                  ],
+                },
+              ].map((block) => (
+                <div
+                  key={block.title}
+                  className="glass-card p-8 flex flex-col gap-4 hover:translate-y-[-4px] transition-all duration-300 shadow-xl"
+                >
+                  <h3 className="text-base font-bold">{block.title}</h3>
+                  <ul className="space-y-3">
+                    {block.items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-xs text-foreground-secondary/50 font-medium leading-relaxed">
+                        <div className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <Icons.check className="w-3 h-3 text-indigo-400" />
+                        </div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            {/* Effective Date */}
+            <div className="text-center mt-12 space-y-2">
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground-secondary/30">
+                Effective: February 2026
+              </p>
+              <p className="text-xs text-foreground-secondary/20 font-medium">
+                Questions about these terms? Contact us at legal@resumify.ai
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* CONTACT SECTION */}
+        <section id="contact" className="py-24 border-t border-foreground/5 px-4 overflow-hidden relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                Get in{" "}
+                <span className="bg-gradient-to-r from-primary via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Touch
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-secondary/40 max-w-2xl mx-auto leading-relaxed">
+                Have a question, feedback, or just want to say hello? We&apos;d love to hear from you.
+              </p>
+            </div>
+
+            {/* Contact Header Card */}
+            <div className="glass-card p-10 md:p-14 mb-8 bg-gradient-to-br from-purple-500/5 via-transparent to-primary/5 border-purple-500/10 shadow-xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 opacity-5">
+                <Icons.activity className="w-56 h-56 rotate-12" />
+              </div>
+              <div className="relative z-10 space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest">
+                  <Icons.activity className="w-3 h-3" />
+                  We&apos;re Here to Help
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold leading-snug">
+                  Whether it&apos;s a bug report, feature request, or career advice — reach out anytime.
+                </h3>
+                <p className="text-sm text-foreground-secondary/50 font-medium leading-relaxed">
+                  Our team is committed to providing quick and helpful responses.
+                  We typically respond within 24 hours on business days.
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Methods Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  title: "Email Us",
+                  desc: "For general inquiries and support requests.",
+                  detail: "support@resumify.ai",
+                  color: "text-primary",
+                  bg: "bg-primary/10 border-primary/20",
+                  icon: Icons.file,
+                },
+                {
+                  title: "Connect Socially",
+                  desc: "Follow us for updates, tips, and career resources.",
+                  detail: "LinkedIn & Twitter",
+                  color: "text-indigo-400",
+                  bg: "bg-indigo-400/10 border-indigo-400/20",
+                  icon: Icons.linkedin,
+                },
+                {
+                  title: "Help & Support",
+                  desc: "Check our FAQ or reach out for technical assistance.",
+                  detail: "help@resumify.ai",
+                  color: "text-purple-400",
+                  bg: "bg-purple-400/10 border-purple-400/20",
+                  icon: Icons.shield,
+                },
+              ].map((method) => (
+                <div
+                  key={method.title}
+                  className="glass-card p-8 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300 shadow-xl"
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${method.bg} border flex items-center justify-center`}
+                  >
+                    <method.icon className={`w-7 h-7 ${method.color}`} />
+                  </div>
+                  <h3 className="text-base font-bold">{method.title}</h3>
+                  <p className="text-xs text-foreground-secondary/50 font-medium leading-relaxed">
+                    {method.desc}
+                  </p>
+                  <span className={`text-xs font-bold ${method.color}`}>
+                    {method.detail}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Response Time */}
+            <div className="text-center mt-12 space-y-2">
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground-secondary/30">
+                Average response time: Under 24 hours
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* FINAL CTA */}
         <section className="py-32 px-4 relative">
           <div className="max-w-4xl mx-auto glass-card p-16 md:p-24 text-center space-y-10 relative shadow-2xl overflow-hidden group">

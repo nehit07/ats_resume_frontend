@@ -36,10 +36,10 @@ export const Footer = () => {
                 <div>
                     <h4 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">Company</h4>
                     <ul className="space-y-2 text-sm text-foreground-secondary/60 font-medium">
-                        <li><Link href="#" className="hover:text-primary transition-colors">About Us</Link></li>
-                        <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                        <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                        <li><Link href="#" className="hover:text-primary transition-colors">Contact</Link></li>
+                        <li><Link href="#about" className="hover:text-primary transition-colors">About Us</Link></li>
+                        <li><Link href="#privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                        <li><Link href="#terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                        <li><Link href="#contact" className="hover:text-primary transition-colors">Contact</Link></li>
                     </ul>
                 </div>
 
@@ -60,8 +60,8 @@ export const Footer = () => {
                     &copy; 2026 Resumify AI. Made with ❤️ for your career.
                 </p>
                 <div className="flex gap-6 text-[10px] uppercase font-bold tracking-widest text-foreground-secondary/20">
-                    <Link href="#" className="hover:text-foreground">Privacy</Link>
-                    <Link href="#" className="hover:text-foreground">Terms</Link>
+                    <Link href="#privacy" className="hover:text-foreground">Privacy</Link>
+                    <Link href="#terms" className="hover:text-foreground">Terms</Link>
                     <Link href="#" className="hover:text-foreground">Cookies</Link>
                 </div>
             </div>
