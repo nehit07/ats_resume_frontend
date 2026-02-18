@@ -17,6 +17,8 @@ const NAV_ITEMS: SidebarItem[] = [
     { id: "overview", label: "Overview", icon: "🏠", path: "/dashboard" },
     { id: "create", label: "Create Profile", icon: "✨", path: "/profile/create" },
     { id: "edit", label: "Edit Profile", icon: "👤", path: "/profile/edit" },
+    { id: "subscription", label: "Subscription", icon: "💳", path: "/subscription" },
+    { id: "admin", label: "Admin Panel", icon: "🛡️", path: "/admin" },
     { id: "export", label: "Export", icon: "📥", path: "/profile/export" },
 ];
 
@@ -107,8 +109,11 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
                 {/* Primary Navigation */}
                 <nav className="flex-1 px-3 space-y-2 overflow-y-auto no-scrollbar py-4">
                     {NAV_ITEMS.map((item) => {
+                        // Hide admin panel if user is not a superuser
+                        if (item.id === 'admin' && !user?.is_superuser) return null;
+
                         const isActive = isItemActive(item);
-                        const isDisabled = !hasProfile && item.id !== 'overview' && item.id !== 'create';
+                        const isDisabled = !hasProfile && item.id !== 'overview' && item.id !== 'create' && item.id !== 'subscription' && item.id !== 'admin';
 
                         return (
                             <Link
@@ -234,7 +239,7 @@ export function GlobalSidebar({ children }: { children: React.ReactNode }) {
 
                         <div className={`flex flex-col min-w-0 transition-opacity duration-300 ${isCollapsed ? "hidden" : "block"}`}>
                             <span className="text-sm font-bold truncate text-foreground">{user?.email?.split('@')[0]}</span>
-                            <span className="text-[9px] font-black text-primary uppercase tracking-wider">Pro Plan</span>
+                            <span className="text-[9px] font-black text-primary uppercase tracking-wider">{user?.subscription_plan || "Free Plan"}</span>
                         </div>
 
                         {isCollapsed && (

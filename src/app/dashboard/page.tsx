@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── ROW 2: Quick Stats (compact inline) ── */}
-                <div className="grid grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                     {[
                         { label: "Resumes", val: String(stats.resume_files), icon: Icons.file, color: "text-rose-400" },
                         { label: "LinkedIn", val: String(stats.linkedin_files), icon: Icons.linkedin, color: "text-blue-400" },
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── ROW 4: Quick Actions ── */}
-                <div className="grid grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                     {[
                         { href: "/profile/edit", icon: Icons.edit, title: "Edit Profile", bg: "bg-primary/15 dark:bg-primary/10", border: "border-primary/40 dark:border-primary/30 hover:border-primary/70", text: "text-primary dark:text-primary", iconBg: "bg-primary/10 dark:bg-primary/15", glow: "hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]" },
                         { href: "/profile/export", icon: Icons.zap, title: "Generate Resume", bg: "bg-indigo-500/15 dark:bg-indigo-500/10", border: "border-indigo-500/40 dark:border-indigo-500/30 hover:border-indigo-500/70", text: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-500/10 dark:bg-indigo-500/15", glow: "hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]" },

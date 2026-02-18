@@ -16,6 +16,9 @@ interface User {
     email: string;
     auth_provider: string;
     avatar_url?: string | null;
+    is_staff?: boolean;
+    is_superuser?: boolean;
+    subscription_plan?: string;
 }
 
 interface AuthContextType {
@@ -51,15 +54,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!activeToken) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/profile-status/`, {
+            // 1. Check Profile Status
+            const profileRes = await fetch(`${API_BASE_URL}/api/ingestion/profile-status/`, {
                 headers: { "Authorization": `Bearer ${activeToken}` },
             });
-            if (response.ok) {
-                const data = await response.json();
+            if (profileRes.ok) {
+                const data = await profileRes.json();
                 setHasProfile(data.exists);
             }
+
+            // 2. Check Subscription Status (to update plan name if changed/stale)
+            const subRes = await fetch(`${API_BASE_URL}/api/accounts/subscription/`, {
+                headers: { "Authorization": `Bearer ${activeToken}` },
+            });
+            if (subRes.ok) {
+                const subData = await subRes.json();
+                let planName = "Free Plan";
+                if (subData.has_subscription && subData.plan) {
+                    planName = `${subData.plan.display_name} Plan`;
+                }
+
+                // Update user state if plan changed
+                setUser(prev => {
+                    if (!prev) return null;
+                    if (prev.subscription_plan === planName) return prev;
+
+                    const updated = { ...prev, subscription_plan: planName };
+                    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
+                    return updated;
+                });
+            }
         } catch (error) {
-            console.error("Failed to fetch profile status:", error);
+            console.error("Failed to refresh user context:", error);
         }
     }, [accessToken]);
 

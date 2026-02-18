@@ -10,6 +10,22 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
+  const [plans, setPlans] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/plans/`);
+        if (res.ok) {
+          const data = await res.json();
+          setPlans(data.plans || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch plans:", err);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -195,7 +211,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* PRICING SECTION */}
         <section id="pricing" className="py-24 border-y border-foreground/5 px-4 overflow-hidden relative">
 
           <div className="max-w-7xl mx-auto">
@@ -207,52 +222,79 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  name: "Basic", price: "0", desc: "For job seekers starting out",
-                  features: ["1 AI-optimized Resume", "PDF Export only", "Standard Templates", "Basic Support"],
-                  btn: "Get Started", primary: false
-                },
-                {
-                  name: "Pro", price: "19", desc: "For career professionals",
-                  features: ["Unlimited Resumes", "LinkedIn Import", "Word & PDF Export", "Premium Templates", "Priority Support", "Version Control"],
-                  btn: "Go Pro Now", primary: true
-                },
-                {
-                  name: "Enterprise", price: "99", desc: "For recruitment teams",
-                  features: ["Team Management", "Branded Templates", "Bulk AI Processing", "API Access", "Custom Support"],
-                  btn: "Contact Sales", primary: false
-                }
-              ].map((plan) => (
-                <div key={plan.name} className={`glass-card p-10 flex flex-col gap-8 relative overflow-hidden transition-all duration-300 shadow-xl ${plan.primary ? 'ring-2 ring-primary border-primary/30 scale-105 z-10 shadow-primary/10' : 'hover:scale-102 hover:shadow-2xl'}`}>
-                  {plan.primary && <div className="absolute top-6 right-6 px-3 py-1 bg-primary text-[8px] font-black italic uppercase tracking-widest text-white rounded-full">Popular</div>}
+              {plans.length > 0 ? (
+                plans.map((plan) => {
+                  let uiPlan: any = {};
 
-                  <div className="space-y-4 text-center pb-8 border-b border-foreground/5">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground-secondary/50">{plan.name}</h3>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-4xl font-black italic">$</span>
-                      <span className="text-6xl font-black italic">{plan.price}</span>
-                      <span className="text-xs font-bold text-foreground-secondary/40">/month</span>
-                    </div>
-                    <p className="text-xs font-medium text-foreground-secondary/40">{plan.desc}</p>
-                  </div>
+                  if (plan.name === "free") {
+                    uiPlan = {
+                      name: "Free",
+                      desc: "For job seekers starting out",
+                      features: ["1 AI-optimized Resume", "PDF Export only", "Standard Templates", "Basic Support"],
+                      btn: "Get Started",
+                      primary: false
+                    };
+                  } else if (plan.name === "beta") {
+                    uiPlan = {
+                      name: "Beta",
+                      desc: "For career professionals",
+                      features: ["15 Resumes/mo", "30 Exports/mo", "LinkedIn Import", "Basic Templates", "Email Support"],
+                      btn: "Get Beta",
+                      primary: true
+                    };
+                  } else if (plan.name === "pro") {
+                    uiPlan = {
+                      name: "Pro",
+                      desc: "For power users",
+                      features: ["Unlimited Resumes", "Unlimited Exports", "Priority Support", "Premium Templates", "Version Control"],
+                      btn: "Go Pro",
+                      primary: false
+                    };
+                  } else {
+                    // Fallback for unknown plans
+                    uiPlan = {
+                      name: plan.display_name,
+                      desc: plan.description || "Subscription Plan",
+                      features: [],
+                      btn: "Subscribe",
+                      primary: false
+                    }
+                  }
 
-                  <ul className="space-y-4 flex-1">
-                    {plan.features.map(f => (
-                      <li key={f} className="flex items-center gap-3 text-xs font-bold text-foreground-secondary">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border border-foreground/5 ${plan.primary ? 'bg-primary/10 text-primary' : 'bg-foreground/5'}`}>
-                          <Icons.check className="w-3 h-3" />
+                  return (
+                    <div key={plan.name} className={`glass-card p-10 flex flex-col gap-8 relative overflow-hidden transition-all duration-300 shadow-xl ${uiPlan.primary ? 'ring-2 ring-primary border-primary/30 scale-105 z-10 shadow-primary/10' : 'hover:scale-102 hover:shadow-2xl'}`}>
+                      {uiPlan.primary && <div className="absolute top-6 right-6 px-3 py-1 bg-primary text-[8px] font-black italic uppercase tracking-widest text-white rounded-full">Popular</div>}
+
+                      <div className="space-y-4 text-center pb-8 border-b border-foreground/5">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground-secondary/50">{uiPlan.name}</h3>
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-black italic">₹</span>
+                          <span className="text-6xl font-black italic">{Math.floor(plan.pricing.monthly)}</span>
+                          <span className="text-xs font-bold text-foreground-secondary/40">/mo</span>
                         </div>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
+                        <p className="text-xs font-medium text-foreground-secondary/40">{uiPlan.desc}</p>
+                      </div>
 
-                  <button className={`w-full py-4 text-sm font-black italic uppercase tracking-widest rounded-2xl transition-all shadow-lg ${plan.primary ? 'btn-primary shadow-primary/25 hover:shadow-primary/40 active:scale-95' : 'bg-foreground/5 border border-foreground/10 hover:bg-foreground/10'}`}>
-                    {plan.btn}
-                  </button>
-                </div>
-              ))}
+                      <ul className="space-y-4 flex-1">
+                        {uiPlan.features.map((f: string) => (
+                          <li key={f} className="flex items-center gap-3 text-xs font-bold text-foreground-secondary">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border border-foreground/5 ${uiPlan.primary ? 'bg-primary/10 text-primary' : 'bg-foreground/5'}`}>
+                              <Icons.check className="w-3 h-3" />
+                            </div>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <button className={`w-full py-4 text-sm font-black italic uppercase tracking-widest rounded-2xl transition-all shadow-lg ${uiPlan.primary ? 'btn-primary shadow-primary/25 hover:shadow-primary/40 active:scale-95' : 'bg-foreground/5 border border-foreground/10 hover:bg-foreground/10'}`}>
+                        {uiPlan.btn}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-3 text-center py-10 opacity-50">Loading pricing...</div>
+              )}
             </div>
           </div>
         </section>

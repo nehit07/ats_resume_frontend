@@ -107,7 +107,7 @@ export const SearchableDropdown = ({
                                 setSearch(opt.label);
                                 setIsOpen(false);
                             }}
-                            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors"
+                            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors break-words"
                         >
                             {opt.label}
                         </button>
