@@ -4,8 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import ATSResumePreview from "@/components/ATSResumePreview";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch } from "@/lib/apiClient";
 
 // Section keys with status tracking
 type SectionStatus = "todo" | "edited" | "complete";
@@ -84,9 +83,7 @@ function WorkspaceContent() {
     const fetchProfile = useCallback(async () => {
         if (!accessToken) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/profile/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
+            const response = await apiFetch("/api/ingestion/profile/");
 
             if (response.ok) {
                 const data = await response.json();
@@ -127,12 +124,8 @@ function WorkspaceContent() {
         if (!accessToken) return;
         setIsSaving(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/save-profile/`, {
+            const response = await apiFetch("/api/ingestion/save-profile/", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({ sections: profileData }),
             });
             if (response.ok) {

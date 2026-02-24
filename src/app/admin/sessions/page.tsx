@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterSelect } from "@/components/admin/FilterSelect";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch } from "@/lib/apiClient";
 
 interface UserSession {
     id: string;
@@ -38,9 +37,7 @@ export default function AdminSessionsPage() {
         if (revoked) params.set("revoked", revoked);
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/admin-panel/sessions/?${params}`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
+            const res = await apiFetch(`/api/admin-panel/sessions/?${params}`);
             const data = await res.json();
             setSessions(data.data || []);
             setPagination({ page: data.page, page_size: data.page_size, total: data.total, total_pages: data.total_pages });

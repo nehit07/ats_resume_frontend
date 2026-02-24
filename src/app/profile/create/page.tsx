@@ -11,8 +11,7 @@ import { ProfileButton } from "@/components/ProfileButton";
 import LocationSelector from "@/components/LocationSelector";
 import PhoneInput from "@/components/PhoneInput";
 import DateInput from "@/components/DateInput";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch, API_BASE_URL } from "@/lib/apiClient";
 
 type SectionType = "contact" | "summary" | "skills" | "projects" | "experience" | "education" | "achievements";
 
@@ -392,9 +391,7 @@ export default function ProfileCreatePage() {
         const fetchData = async () => {
             try {
                 // Fetch manual and overview data
-                const reviewRes = await fetch(`${API_BASE_URL}/api/ingestion/review-data/`, {
-                    headers: { Authorization: `Bearer ${accessToken}` },
-                });
+                const reviewRes = await apiFetch("/api/ingestion/review-data/");
 
                 if (reviewRes.ok) {
                     const data = await reviewRes.json();
@@ -433,9 +430,7 @@ export default function ProfileCreatePage() {
     const fetchFiles = async () => {
         if (!accessToken) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/files/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
+            const response = await apiFetch("/api/ingestion/files/");
             if (response.ok) {
                 const data = await response.json();
                 setResumes(data.resumes || []);
@@ -486,9 +481,8 @@ export default function ProfileCreatePage() {
         const url = `${API_BASE_URL}/api/ingestion/${endpoint}${replace ? "?replace=true" : ""}`;
 
         try {
-            const response = await fetch(url, {
+            const response = await apiFetch(url.replace(API_BASE_URL, ''), {
                 method: "POST",
-                headers: { Authorization: `Bearer ${accessToken}` },
                 body: formData,
             });
 
@@ -564,9 +558,8 @@ export default function ProfileCreatePage() {
     const confirmDeleteFile = async () => {
         if (!confirmDialog.type || !confirmDialog.id) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/files/${confirmDialog.type}/${confirmDialog.id}/`, {
+            const response = await apiFetch(`/api/ingestion/files/${confirmDialog.type}/${confirmDialog.id}/`, {
                 method: "DELETE",
-                headers: { Authorization: `Bearer ${accessToken}` },
             });
             if (response.ok) {
                 setToast({ message: "File deleted successfully", type: "success" });
@@ -738,12 +731,8 @@ export default function ProfileCreatePage() {
             if (selectedLinkedInId) sessionStorage.setItem("selectedLinkedInId", selectedLinkedInId);
 
             // 1. Start the Celery job
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/generate-profile/`, {
+            const response = await apiFetch("/api/ingestion/generate-profile/", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
                     resume_id: selectedResumeId,
                     linkedin_id: selectedLinkedInId,
@@ -761,12 +750,7 @@ export default function ProfileCreatePage() {
             // 2. Poll for status
             const pollStatus = async () => {
                 try {
-                    const statusRes = await fetch(
-                        `${API_BASE_URL}/api/ingestion/task-status/${job_id}/`,
-                        {
-                            headers: { Authorization: `Bearer ${accessToken}` },
-                        }
-                    );
+                    const statusRes = await apiFetch(`/api/ingestion/task-status/${job_id}/`);
 
                     if (!statusRes.ok) throw new Error("Status check failed");
 

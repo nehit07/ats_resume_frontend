@@ -13,20 +13,16 @@ export default function AuthCallbackPage() {
     useEffect(() => {
         const handleCallback = async () => {
             try {
-                // Extract token and user info from URL params
-                // The backend OAuth callback should redirect here with these params
-                const accessToken = searchParams.get("access_token");
+                // The backend OAuth callback sets the JWT as an HttpOnly cookie
+                // and passes ONLY user data in the URL (no token).
                 const userJson = searchParams.get("user");
 
-                if (accessToken && userJson) {
+                if (userJson) {
                     const user = JSON.parse(decodeURIComponent(userJson));
 
-                    // Store temporarily in sessionStorage for the AuthContext to pick up
-                    sessionStorage.setItem("temp_token", accessToken);
-                    sessionStorage.setItem("temp_user", JSON.stringify(user));
-
-                    // Set auth state
-                    setAuthFromOAuth(accessToken, user);
+                    // Cookie is already set by the backend redirect.
+                    // Just store user data in AuthContext.
+                    setAuthFromOAuth(user);
 
                     // Redirect to dashboard
                     router.replace("/dashboard");
@@ -36,7 +32,7 @@ export default function AuthCallbackPage() {
                     if (errorParam) {
                         setError(decodeURIComponent(errorParam));
                     } else {
-                        setError("Authentication failed. No token received.");
+                        setError("Authentication failed. No user data received.");
                     }
                 }
             } catch (err) {

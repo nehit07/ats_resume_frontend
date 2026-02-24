@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import ATSResumePreview from "@/components/ATSResumePreview";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import GenerationLimitModal from "@/components/GenerationLimitModal";
+import { apiFetch } from "@/lib/apiClient";
 
 interface ATSCriterion {
     name: string;
@@ -37,7 +37,7 @@ interface JobResult {
 
 export default function ExportPage() {
     const router = useRouter();
-    const { isAuthenticated, isLoading, accessToken } = useAuth();
+    const { isAuthenticated, isLoading, accessToken, refreshProfileStatus } = useAuth();
 
     const [profileData, setProfileData] = useState<any>({});
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -54,13 +54,16 @@ export default function ExportPage() {
     const [exportingPdf, setExportingPdf] = useState(false);
     const [exportingDocx, setExportingDocx] = useState(false);
 
+    // Limit Modal states
+    const [showLimitModal, setShowLimitModal] = useState(false);
+    const [limitType, setLimitType] = useState<"generation" | "export">("generation");
+    const [currentLimit, setCurrentLimit] = useState<number | string>(0);
+
     // Fetch profile data
     const fetchProfile = useCallback(async () => {
         if (!accessToken) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingestion/profile/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
+            const response = await apiFetch("/api/ingestion/profile/");
             if (response.ok) {
                 const data = await response.json();
                 setProfileData(data);
@@ -73,8 +76,11 @@ export default function ExportPage() {
     }, [accessToken]);
 
     useEffect(() => {
-        if (accessToken) fetchProfile();
-    }, [accessToken, fetchProfile]);
+        if (accessToken) {
+            fetchProfile();
+            refreshProfileStatus();
+        }
+    }, [accessToken, fetchProfile, refreshProfileStatus]);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) router.replace("/login");
@@ -96,19 +102,28 @@ export default function ExportPage() {
         setAtsLoading(true);
         setAtsError(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/ingestion/ats-score/`, {
+            const res = await apiFetch("/api/ingestion/ats-score/", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                },
             });
+
+            if (res.status === 403) {
+                const data = await res.json();
+                if (data.error === "generation_limit_reached") {
+                    setLimitType("generation");
+                    setCurrentLimit(data.limit);
+                    setShowLimitModal(true);
+                    return;
+                }
+            }
+
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.error || "ATS scoring failed");
             }
             const data: ATSResult = await res.json();
             setAtsResult(data);
+            // Refresh counts
+            refreshProfileStatus();
         } catch (err: any) {
             setAtsError(err.message || "Something went wrong");
             console.error("ATS Agent error:", err);
@@ -122,19 +137,28 @@ export default function ExportPage() {
         setJobLoading(true);
         setJobError(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/ingestion/job-suggestions/`, {
+            const res = await apiFetch("/api/ingestion/job-suggestions/", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                },
             });
+
+            if (res.status === 403) {
+                const data = await res.json();
+                if (data.error === "generation_limit_reached") {
+                    setLimitType("generation");
+                    setCurrentLimit(data.limit);
+                    setShowLimitModal(true);
+                    return;
+                }
+            }
+
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.error || "Job suggestions failed");
             }
             const data: JobResult = await res.json();
             setJobResult(data);
+            // Refresh counts
+            refreshProfileStatus();
         } catch (err: any) {
             setJobError(err.message || "Something went wrong");
             console.error("Job Agent error:", err);
@@ -148,24 +172,62 @@ export default function ExportPage() {
         const setLoading = format === "pdf" ? setExportingPdf : setExportingDocx;
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/ingestion/export/?file_format=${format}`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            if (!res.ok) {
-                const errorText = await res.text().catch(() => "No response body");
-                console.error(`Export ${format} failed with status ${res.status}:`, errorText);
-                throw new Error(`Export failed (${res.status})`);
+            // Step 1: Request generation
+            const generateRes = await apiFetch(`/api/export/generate/?file_format=${format}`, { method: "POST" });
+
+            if (generateRes.status === 403 || generateRes.status === 400) {
+                const data = await generateRes.json();
+                if (data.error === "export_limit_reached") {
+                    setLimitType("export");
+                    setCurrentLimit(data.limit);
+                    setShowLimitModal(true);
+                    return;
+                }
+                if (data.error === "ats_score_required") {
+                    alert(data.message);
+                    return;
+                }
+                throw new Error(data.message || data.error || "Generation failed");
             }
 
-            const blob = await res.blob();
+            if (!generateRes.ok) {
+                const errorText = await generateRes.text().catch(() => "No response body");
+                console.error(`Export generation failed with status ${generateRes.status}:`, errorText);
+                throw new Error(`Export generation failed (${generateRes.status})`);
+            }
+
+            const generateData = await generateRes.json();
+            const downloadUrl = generateData.download_url;
+
+            // Step 2: Download the generated file
+            const downloadRes = await apiFetch(downloadUrl);
+            if (!downloadRes.ok) {
+                throw new Error(`Download failed (${downloadRes.status})`);
+            }
+
+            const blob = await downloadRes.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Resume.${format}`;
+
+            // Extract filename from Content-Disposition if present
+            const contentDisposition = downloadRes.headers.get('Content-Disposition');
+            let filename = `Resume.${format}`;
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="(.+)"/);
+                if (match && match.length > 1) {
+                    filename = match[1];
+                }
+            }
+
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+
+            // Refresh counts
+            refreshProfileStatus();
         } catch (err) {
             console.error(`Export ${format} error:`, err);
             alert(`Failed to export ${format.toUpperCase()}. Please try again.`);
@@ -491,6 +553,14 @@ export default function ExportPage() {
                     Your Final Resume
                 </div>
             </aside>
+
+            {/* Limit Modal */}
+            <GenerationLimitModal
+                isOpen={showLimitModal}
+                onClose={() => setShowLimitModal(false)}
+                type={limitType}
+                limit={currentLimit}
+            />
         </div>
     );
 }

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch } from "@/lib/apiClient";
 
 interface AdminGuardProps {
     children: React.ReactNode;
@@ -25,9 +24,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
         }
 
         // Verify admin status from the backend (database truth)
-        fetch(`${API_BASE_URL}/api/admin-panel/verify/`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        apiFetch("/api/admin-panel/verify/")
             .then((res) => {
                 if (res.ok) {
                     setStatus("authorized");

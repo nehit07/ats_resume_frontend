@@ -7,9 +7,7 @@ import {
     useCallback,
     useEffect,
 } from "react";
-
-// API base URL - adjust this based on your backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch, API_BASE_URL } from "@/lib/apiClient";
 
 interface User {
     id: string;
@@ -19,67 +17,90 @@ interface User {
     is_staff?: boolean;
     is_superuser?: boolean;
     subscription_plan?: string;
+    subscription_details?: {
+        plan_name: string;
+        display_name: string;
+        generation_count: number;
+        generation_limit: number;
+        export_count: number;
+        export_limit: number;
+        generations_remaining: number;
+        exports_remaining: number;
+        status: string;
+        is_expired: boolean;
+        end_date: string | null;
+    };
 }
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    accessToken: string | null;
+    accessToken: string | null; // Kept for backward compat — always null now (cookie handles auth)
     hasProfile: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    setAuthFromOAuth: (token: string, user: User) => void;
+    setAuthFromOAuth: (userData: User) => void;
     refreshProfileStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Storage keys
-const AUTH_TOKEN_KEY = "resumify_auth_token";
+// User data localStorage key (user info only — NO tokens)
 const AUTH_USER_KEY = "resumify_auth_user";
-
-// Store token in memory (also persisted to localStorage for refresh survival)
-let inMemoryToken: string | null = null;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [accessToken, setAccessToken] = useState<string | null>(null);
     const [hasProfile, setHasProfile] = useState<boolean>(false);
 
-    const refreshProfileStatus = useCallback(async (token?: string) => {
-        const activeToken = token || accessToken || inMemoryToken;
-        if (!activeToken) return;
-
+    const refreshProfileStatus = useCallback(async () => {
         try {
             // 1. Check Profile Status
-            const profileRes = await fetch(`${API_BASE_URL}/api/ingestion/profile-status/`, {
-                headers: { "Authorization": `Bearer ${activeToken}` },
-            });
+            const profileRes = await apiFetch(`${API_BASE_URL}/api/ingestion/profile-status/`);
             if (profileRes.ok) {
                 const data = await profileRes.json();
                 setHasProfile(data.exists);
             }
 
-            // 2. Check Subscription Status (to update plan name if changed/stale)
-            const subRes = await fetch(`${API_BASE_URL}/api/accounts/subscription/`, {
-                headers: { "Authorization": `Bearer ${activeToken}` },
-            });
+            // 2. Check Subscription Status
+            const subRes = await apiFetch(`${API_BASE_URL}/api/auth/subscription/`);
             if (subRes.ok) {
                 const subData = await subRes.json();
                 let planName = "Free Plan";
+                let subscriptionDetails = null;
+
                 if (subData.has_subscription && subData.plan) {
                     planName = `${subData.plan.display_name} Plan`;
+                    subscriptionDetails = {
+                        plan_name: subData.plan.name,
+                        display_name: subData.plan.display_name,
+                        generation_count: subData.usage.generation_count,
+                        generation_limit: subData.usage.generation_limit,
+                        export_count: subData.usage.export_count,
+                        export_limit: subData.usage.export_limit,
+                        generations_remaining: subData.usage.generations_remaining,
+                        exports_remaining: subData.usage.exports_remaining,
+                        status: subData.status,
+                        is_expired: subData.is_expired,
+                        end_date: subData.end_date,
+                    };
                 }
 
-                // Update user state if plan changed
                 setUser(prev => {
                     if (!prev) return null;
-                    if (prev.subscription_plan === planName) return prev;
 
-                    const updated = { ...prev, subscription_plan: planName };
+                    const hasChanged = prev.subscription_plan !== planName ||
+                        JSON.stringify(prev.subscription_details) !== JSON.stringify(subscriptionDetails);
+
+                    if (!hasChanged) return prev;
+
+                    const updated = {
+                        ...prev,
+                        subscription_plan: planName,
+                        subscription_details: subscriptionDetails || prev.subscription_details
+                    };
                     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
                     return updated;
                 });
@@ -87,44 +108,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error("Failed to refresh user context:", error);
         }
-    }, [accessToken]);
+    }, []);
 
-    // Check for existing auth on mount
+    // Check for existing auth on mount via cookie-based /me endpoint
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // First check localStorage for persisted auth (survives page refresh)
-                const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-                const storedUser = localStorage.getItem(AUTH_USER_KEY);
+                // Try to authenticate via cookie (survives page refresh)
+                const res = await apiFetch(`${API_BASE_URL}/api/auth/me/`);
 
-                if (storedToken && storedUser) {
-                    inMemoryToken = storedToken;
-                    setAccessToken(storedToken);
-                    setUser(JSON.parse(storedUser));
-                    refreshProfileStatus(storedToken); // Fetch profile status
+                if (res.ok) {
+                    const data = await res.json();
+                    const userData = data.user;
+                    setUser(userData);
+                    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
+                    refreshProfileStatus();
                 } else {
-                    // Fallback: Check sessionStorage for OAuth callback tokens
-                    const tempToken = sessionStorage.getItem("temp_token");
-                    const tempUser = sessionStorage.getItem("temp_user");
-
-                    if (tempToken && tempUser) {
-                        inMemoryToken = tempToken;
-                        setAccessToken(tempToken);
-                        const parsedUser = JSON.parse(tempUser);
-                        setUser(parsedUser);
-                        refreshProfileStatus(tempToken);
-
-                        // Persist to localStorage and clear temp storage
-                        localStorage.setItem(AUTH_TOKEN_KEY, tempToken);
-                        localStorage.setItem(AUTH_USER_KEY, tempUser);
-                        sessionStorage.removeItem("temp_token");
-                        sessionStorage.removeItem("temp_user");
-                    }
+                    // Cookie expired or invalid — check for cached user data
+                    // (user will need to re-login, but we can show a graceful transition)
+                    localStorage.removeItem(AUTH_USER_KEY);
+                    setUser(null);
                 }
             } catch (error) {
                 console.error("Auth check failed:", error);
-                // Clear any corrupted data
-                localStorage.removeItem(AUTH_TOKEN_KEY);
                 localStorage.removeItem(AUTH_USER_KEY);
             } finally {
                 setIsLoading(false);
@@ -137,30 +143,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = useCallback(async (email: string, password: string) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+            const response = await apiFetch(`${API_BASE_URL}/api/auth/login/`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Login failed");
+                throw new Error(errorData.detail || errorData.error || "Login failed");
             }
 
             const data = await response.json();
 
-            // Store token in memory and localStorage
-            inMemoryToken = data.access_token;
-            setAccessToken(data.access_token);
+            // Cookie is set automatically by the backend response.
+            // We just store user data locally.
             setUser(data.user);
-            localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
             localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
 
             // Refresh profile status after login
-            refreshProfileStatus(data.access_token);
+            refreshProfileStatus();
         } finally {
             setIsLoading(false);
         }
@@ -169,11 +171,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const register = useCallback(async (email: string, password: string) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/signup/`, {
+            const response = await apiFetch(`${API_BASE_URL}/api/auth/signup/`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             });
 
@@ -184,11 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const data = await response.json();
 
-            // Auto-login: Store token and user data
-            inMemoryToken = data.access_token;
-            setAccessToken(data.access_token);
+            // Cookie is set automatically by the backend response.
             setUser(data.user);
-            localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
             localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
             setHasProfile(false); // New user won't have a profile
         } finally {
@@ -198,35 +195,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = useCallback(async () => {
         try {
-            if (inMemoryToken) {
-                await fetch(`${API_BASE_URL}/api/auth/logout/`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${inMemoryToken}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-            }
+            // Cookie is sent automatically; backend clears it
+            await apiFetch(`${API_BASE_URL}/api/auth/logout/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
-            // Clear auth state and localStorage
-            inMemoryToken = null;
-            setAccessToken(null);
             setUser(null);
             setHasProfile(false);
-            localStorage.removeItem(AUTH_TOKEN_KEY);
             localStorage.removeItem(AUTH_USER_KEY);
         }
     }, []);
 
-    const setAuthFromOAuth = useCallback((token: string, userData: User) => {
-        inMemoryToken = token;
-        setAccessToken(token);
+    const setAuthFromOAuth = useCallback((userData: User) => {
+        // Cookie was already set by the backend redirect.
+        // We just store user data in state and localStorage.
         setUser(userData);
-        localStorage.setItem(AUTH_TOKEN_KEY, token);
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
-        refreshProfileStatus(token);
+        refreshProfileStatus();
     }, [refreshProfileStatus]);
 
     return (
@@ -235,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user,
                 isAuthenticated: !!user,
                 isLoading,
-                accessToken,
+                accessToken: user ? "cookie-auth-active" : null, // Backward compat for components checking this
                 hasProfile,
                 login,
                 register,
@@ -255,17 +243,4 @@ export function useAuth() {
         throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
-}
-
-// Helper function to get auth headers for API calls
-export function getAuthHeaders(): HeadersInit {
-    if (inMemoryToken) {
-        return {
-            "Authorization": `Bearer ${inMemoryToken}`,
-            "Content-Type": "application/json",
-        };
-    }
-    return {
-        "Content-Type": "application/json",
-    };
 }

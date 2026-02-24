@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalSidebar } from "@/components/GlobalSidebar";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch } from "@/lib/apiClient";
 
 interface Plan {
     name: string;
@@ -45,21 +44,20 @@ interface Subscription {
 }
 
 export default function SubscriptionPage() {
-    const { accessToken } = useAuth();
+    const { accessToken, user } = useAuth();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Initial fetch
     useEffect(() => {
         if (!accessToken) return;
 
         const fetchData = async () => {
             try {
                 const [plansRes, subRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/auth/plans/`),
-                    fetch(`${API_BASE_URL}/api/auth/subscription/`, {
-                        headers: { Authorization: `Bearer ${accessToken}` },
-                    }),
+                    apiFetch("/api/auth/plans/"),
+                    apiFetch("/api/auth/subscription/"),
                 ]);
 
                 if (plansRes.ok) {
@@ -82,6 +80,33 @@ export default function SubscriptionPage() {
 
         fetchData();
     }, [accessToken]);
+
+    // Sync usage counts with AuthContext for real-time updates
+    useEffect(() => {
+        const details = user?.subscription_details;
+        if (details && subscription) {
+            setSubscription(prev => {
+                if (!prev) return null;
+
+                // Only update if counts are actually different
+                if (prev.usage.generation_count === details.generation_count &&
+                    prev.usage.export_count === details.export_count) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    usage: {
+                        ...prev.usage,
+                        generation_count: details.generation_count,
+                        export_count: details.export_count,
+                        generations_remaining: details.generations_remaining,
+                        exports_remaining: details.exports_remaining,
+                    }
+                };
+            });
+        }
+    }, [user?.subscription_details, subscription === null]);
 
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "—";

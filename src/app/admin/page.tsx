@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { StatsCard } from "@/components/admin/StatsCard";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiFetch } from "@/lib/apiClient";
 
 interface DashboardStats {
     users: {
@@ -57,9 +56,7 @@ export default function AdminDashboardPage() {
     useEffect(() => {
         if (!accessToken) return;
 
-        fetch(`${API_BASE_URL}/api/admin-panel/dashboard/`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        apiFetch("/api/admin-panel/dashboard/")
             .then((res) => res.json())
             .then((data) => {
                 setStats(data);
@@ -182,9 +179,9 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
                             <div className="flex items-center gap-3">
                                 <div className={`w-3 h-3 rounded-full ${tierPopup.color === "blue" ? "bg-blue-500" :
-                                        tierPopup.color === "primary" ? "bg-primary" :
-                                            tierPopup.color === "red" ? "bg-red-500" :
-                                                "bg-gray-500"
+                                    tierPopup.color === "primary" ? "bg-primary" :
+                                        tierPopup.color === "red" ? "bg-red-500" :
+                                            "bg-gray-500"
                                     }`} />
                                 <h2 className="text-lg font-black text-foreground">{tierPopup.label}</h2>
                                 <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs font-bold text-foreground-secondary">
@@ -209,9 +206,9 @@ export default function AdminDashboardPage() {
                                         <li key={email} className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-white/[0.03] transition-colors">
                                             <span className="text-xs font-bold text-foreground-secondary/30 w-5 text-right">{i + 1}</span>
                                             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black uppercase ${tierPopup.color === "blue" ? "bg-blue-500/20 text-blue-400" :
-                                                    tierPopup.color === "primary" ? "bg-primary/20 text-primary" :
-                                                        tierPopup.color === "red" ? "bg-red-500/20 text-red-400" :
-                                                            "bg-white/10 text-foreground-secondary"
+                                                tierPopup.color === "primary" ? "bg-primary/20 text-primary" :
+                                                    tierPopup.color === "red" ? "bg-red-500/20 text-red-400" :
+                                                        "bg-white/10 text-foreground-secondary"
                                                 }`}>
                                                 {email[0]}
                                             </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Icons } from "@/components/Icons";
+import { apiFetch } from "@/lib/apiClient";
 
 /* ─── Activity Icons Mapping ─── */
 const ACTIVITY_ICONS: Record<string, React.ComponentType<any>> = {
@@ -39,7 +40,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function DashboardPage() {
-    const { accessToken, isAuthenticated, isLoading } = useAuth();
+    const { accessToken, isAuthenticated, isLoading, refreshProfileStatus } = useAuth();
     const router = useRouter();
     const [ps, setPs] = useState<ProfileStatus | null>(null);
     const [loading, setLoading] = useState(true);
@@ -55,9 +56,10 @@ export default function DashboardPage() {
             return;
         }
 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ingestion/profile-status/`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` },
-        })
+        // Refresh global subscription state for consistency
+        refreshProfileStatus();
+
+        apiFetch("/api/ingestion/profile-status/")
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d) setPs(d); })
             .catch(() => { })
