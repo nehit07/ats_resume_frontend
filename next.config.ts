@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   // Allow API requests to backend
   async rewrites() {
     return [

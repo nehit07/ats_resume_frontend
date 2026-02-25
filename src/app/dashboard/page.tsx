@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Icons } from "@/components/Icons";
 import { apiFetch } from "@/lib/apiClient";
+import { VersionHistoryModal } from "@/components/VersionHistoryModal";
 
 /* ─── Activity Icons Mapping ─── */
 const ACTIVITY_ICONS: Record<string, React.ComponentType<any>> = {
@@ -44,6 +45,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [ps, setPs] = useState<ProfileStatus | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -344,27 +346,53 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── ROW 4: Quick Actions ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
                     {[
                         { href: "/profile/edit", icon: Icons.edit, title: "Edit Profile", bg: "bg-primary/15 dark:bg-primary/10", border: "border-primary/40 dark:border-primary/30 hover:border-primary/70", text: "text-primary dark:text-primary", iconBg: "bg-primary/10 dark:bg-primary/15", glow: "hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]" },
                         { href: "/profile/export", icon: Icons.zap, title: "Generate Resume", bg: "bg-indigo-500/15 dark:bg-indigo-500/10", border: "border-indigo-500/40 dark:border-indigo-500/30 hover:border-indigo-500/70", text: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-500/10 dark:bg-indigo-500/15", glow: "hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]" },
                         { href: "/profile/edit?view=split", icon: Icons.eye, title: "Split Preview", bg: "bg-purple-500/15 dark:bg-purple-500/10", border: "border-purple-500/40 dark:border-purple-500/30 hover:border-purple-500/70", text: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-500/10 dark:bg-purple-500/15", glow: "hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]" },
                         { href: "/profile/create", icon: Icons.plus, title: "New Profile", bg: "bg-emerald-500/15 dark:bg-emerald-500/10", border: "border-emerald-500/40 dark:border-emerald-500/30 hover:border-emerald-500/70", text: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-500/10 dark:bg-emerald-500/15", glow: "hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]" },
-                    ].map((a) => (
-                        <Link
-                            key={a.href}
-                            href={a.href}
-                            className={`${a.bg} ${a.border} border rounded-xl px-3.5 py-3 flex items-center gap-2.5 hover:scale-[1.03] transition-all duration-200 group cursor-pointer ${a.glow}`}
-                        >
-                            <div className={`w-7 h-7 rounded-lg ${a.iconBg} border border-current/20 flex items-center justify-center ${a.text} group-hover:scale-110 transition-transform`}>
-                                <a.icon className="w-3.5 h-3.5" />
-                            </div>
-                            <span className={`text-xs font-bold ${a.text}`}>{a.title}</span>
-                            <Icons.chevronRight className={`w-3 h-3 ml-auto ${a.text} opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
-                        </Link>
+                        { action: () => setIsVersionModalOpen(true), icon: Icons.layers, title: "Version History", bg: "bg-rose-500/15 dark:bg-rose-500/10", border: "border-rose-500/40 dark:border-rose-500/30 hover:border-rose-500/70", text: "text-rose-600 dark:text-rose-400", iconBg: "bg-rose-500/10 dark:bg-rose-500/15", glow: "hover:shadow-[0_0_20px_rgba(244,63,94,0.2)]" },
+                    ].map((a: any, idx) => (
+                        a.href ? (
+                            <Link
+                                key={idx}
+                                href={a.href}
+                                className={`${a.bg} ${a.border} border rounded-xl px-3.5 py-3 flex items-center gap-2.5 hover:scale-[1.03] transition-all duration-200 group cursor-pointer ${a.glow}`}
+                            >
+                                <div className={`w-7 h-7 rounded-lg ${a.iconBg} border border-current/20 flex items-center justify-center ${a.text} group-hover:scale-110 transition-transform`}>
+                                    <a.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <span className={`text-xs font-bold ${a.text}`}>{a.title}</span>
+                                <Icons.chevronRight className={`w-3 h-3 ml-auto ${a.text} opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
+                            </Link>
+                        ) : (
+                            <button
+                                key={idx}
+                                onClick={a.action}
+                                className={`${a.bg} ${a.border} border rounded-xl px-3.5 py-3 flex items-center gap-2.5 hover:scale-[1.03] transition-all duration-200 group cursor-pointer ${a.glow} text-left w-full`}
+                            >
+                                <div className={`w-7 h-7 rounded-lg ${a.iconBg} border border-current/20 flex items-center justify-center ${a.text} group-hover:scale-110 transition-transform`}>
+                                    <a.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <span className={`text-xs font-bold ${a.text}`}>{a.title}</span>
+                                <Icons.chevronRight className={`w-3 h-3 ml-auto ${a.text} opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
+                            </button>
+                        )
                     ))}
                 </div>
 
+                <VersionHistoryModal
+                    isOpen={isVersionModalOpen}
+                    onClose={() => setIsVersionModalOpen(false)}
+                    onRestoreSuccess={(newVersion) => {
+                        console.log("Restored version:", newVersion);
+                        // Refresh dashboard stats by re-fetching profile
+                        apiFetch("/api/ingestion/profile-status/")
+                            .then(r => r.ok ? r.json() : null)
+                            .then(d => { if (d) setPs(d); });
+                    }}
+                />
             </div>
         </div>
     );
